@@ -1,0 +1,49 @@
+html, body{
+  width: 100%;
+  height: 100%;
+}
+
+body{
+  background: #057;
+  background: linear-gradient(#344, #111);
+  color: #FFF;
+  margin: 0;
+}
+.viewContainer{
+  width: 100%;
+  height: 100%;
+}
+.mainView{
+  width: 100%;
+  height: 100%;
+  display: flex;
+}
+.uiPanel{
+  display: flex;
+  flex-grow: 1;
+  flex-shrink: 1;
+  /* border: 1px solid #FFF; /* For debugging */ */
+  box-sizing: border-box;
+  overflow: hidden;
+}
+.textField{
+  align-items: center;
+  justify-content: center;
+}
+
+#main{
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  display: flex;
+}
+
+.fullscreen{
+  position: fixed;
+  top: 0px; left: 0px;
+  width: 100%; height: 100%;
+}
+.fillparent{
+  width: 100%;
+  height: 100%;
+}
