@@ -19,10 +19,6 @@ class Scoreboard extends UIPanel{
     t.appendChild(t.mainScore);
     t.appendChild(t.rightPFP);
   }
-  resize(){
-    super.calcSize();
-    super.applySize();
-  }
 }
 
 class ScoreboardPFP extends UIPanel{
@@ -86,6 +82,8 @@ class ScoreboardPeriodArea extends UIPanel{
     t.setStyle("flexDirection", "column");
     t.setStyle("fontSize", "2em");
     t.label = new TextField("PERIOD")
+    t.label.setStyle("height", "1.1em");
+    t.label.setElasticity(0);
     t.number = new NumberField("X");
     t.appendChild(t.label);
     t.appendChild(t.number);

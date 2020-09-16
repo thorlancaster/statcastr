@@ -23,8 +23,9 @@ class Initializer {
     // Constant dependencies and Application Classes
     t.loadScript("js/libs/utils.js");
     t.loadScript("js/classes/Main.js");
-    t.loadScript("js/classes/UIPanel.js");
-    t.loadScript("js/classes/scoreboard/Scoreboard.js");
+    t.loadScript("js/classes/ui/UIPanel.js");
+    t.loadScript("js/classes/viewdisplay/Scoreboard.js");
+    t.loadScript("js/classes/model/GameModel.js");
     // Styles
     t.loadStyle("css/main.css");
 

@@ -15,6 +15,15 @@ class UIPanel{
     return this;
   }
 
+  /**
+  * Function to call when this element's size changes
+  * @caution To avoid layout thrashing, call this function on the root if possible
+  */
+  resize(){
+    this.calcSize();
+    this.applySize();
+  }
+
   applyStyle(obj){
     for(var x = 0; x < this.children.length; x++){this.children[x].applyStyle(obj);}}
   update(){
@@ -51,6 +60,7 @@ class UIPanel{
   setStyles(n1, n2, v){
     this.setStyle(n1, v);
     this.setStyle(n2, v);
+    return this;
   }
   // Shortcut to set flex-grow and flex-shrink.
   // Higher values makes the element more stretchy
@@ -58,6 +68,68 @@ class UIPanel{
     this.setStyle("flexGrow", x);
     this.setStyle("flexShrink", x);
     return this;
+  }
+}
+
+class TextField extends UIPanel{
+  constructor(txt){
+    super();
+    this.addClass("textField");
+    if(txt != null)
+      this.setText(txt);
+  }
+  setText(txt){
+    this.element.textContent = txt; return this;}
+  setHTML(html){
+    this.element.innerHTML = html; return this;}
+}
+
+
+class TabSelector extends UIPanel{
+  constructor(){
+    super();
+    var t = this;
+    t.setStyle("width", "100%");
+    t.element.style.setProperty("--ts-height", "1.5em");
+    t.setStyle("height", "var(--ts-height)").setElasticity(0);
+    t.setStyle("fontWeight", "700");
+    t.setStyle("borderBottom", "0.1em solid #000");
+    t.items = [];
+  }
+  addIcon(img){
+    var t = this;
+    var addend = new ImageField(img).setElasticity(0);
+    addend.setStyles("marginLeft", "marginRight", "0.2em").setStyle("width", "var(--ts-height)");
+    t.appendChild(addend);
+  }
+  addTab(html, name){
+    var t = this;
+    var addend = new TabSelectorItem(html, name);
+    t.appendChild(addend);
+    t.items.push(addend);
+  }
+}
+
+class TabSelectorItem extends TextField{
+  constructor(str, name){
+    super();
+    var t = this;
+    t.setHTML(str).addClass("tabSelectorItem").setElasticity(0);
+    t.setStyles("paddingLeft", "paddingRight", "0.6em");
+    t.setStyle("cursor", "pointer");
+    t.element.dataset.name = name;
+    t.element.addEventListener("mouseenter", t.enter.bind(t));
+    t.element.addEventListener("mouseleave", t.leave.bind(t));
+    t.element.addEventListener("click", t.click.bind(t));
+  }
+  enter(e){
+    this.setStyle("background", "var(--sel-bg)").setStyle("color", "var(--sel-fg)");
+  }
+  leave(e){
+    this.setStyle("background", "").setStyle("color", "");
+  }
+  click(e){
+    console.log(e.target.dataset.name);
   }
 }
 
@@ -243,19 +315,4 @@ class NumberField extends UIPanel{
      ctx.fillRect(Math.floor(xpos+(nw-sw)/2), Math.floor(ypos+(nh-sw)*0.75),sw,sw);
    }
  }
-}
-
-
-class TextField extends UIPanel{
-  constructor(txt){
-    super();
-    this.addClass("textField");
-    this.setStyle("fontFamily", "Helvetica, sans-serif");
-    if(txt != null)
-      this.setText(txt);
-  }
-  setText(txt){
-    this.element.textContent = txt; return this;}
-  setHTML(html){
-    this.element.innerHTML = html; return this;}
 }
