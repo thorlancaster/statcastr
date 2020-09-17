@@ -246,6 +246,10 @@ class NumberField extends UIPanel{
     t.ctx = t.canvas.getContext("2d");
   }
 
+  setValue(num){
+    this.value = parseInt(num);
+  }
+
   applyStyle(obj){
     super.applyStyle(obj);
     var t = this;
@@ -261,18 +265,27 @@ class NumberField extends UIPanel{
     var rtn = 0;
     switch(fChar){
       case "X": rtn = 0; break; // Number or '0'
-      case "x": rtn = -2; break; // Number or ' '
-      case "1": rtn = -1; break; // 1 or ' '
+      case "x": rtn = -1; break; // Number or ' '
       default: rtn = fChar; break;
     }
     if(typeof rtn == "number"){
-      var apos = pos;
+      var apos = pos; // Get actual position in the number
       for(var x = pos; x >= 0; x--){
         var c = f.charAt(f.length-x-1);
         if(!(c == 'x' || c == 'X' || c == '1'))
           apos--;
       }
-      return Math.floor(t.value / Math.pow(10, apos) % 10);
+      switch(fChar){
+        case "X":
+          return Math.floor(t.value / Math.pow(10, apos) % 10);
+        case "x":
+          var val = t.value / Math.pow(10, apos);
+          if(val >= 1)
+            return Math.floor(val % 10);
+          else return -1;
+        default:
+          return rtn;
+      }
     }
 
     return fChar;

@@ -20,6 +20,7 @@ class Initializer {
     l.loadScript("js/classes/viewdisplay/Scoreboard.js");
     l.loadScript("js/classes/model/GameModel.js");
     l.loadScript("js/classes/model/BasketballGameModel.js");
+    l.loadScript("js/classes/view/ScoreboardView.js");
     // Styles
     t.loadStyle("css/main.css");
 

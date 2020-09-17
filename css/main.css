@@ -34,7 +34,7 @@ body{
   font-weight: 700;
 }
 
-.mainView{
+.viewDisplay{
   width: 100%;
   height: 100%;
   display: flex;

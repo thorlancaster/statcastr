@@ -12,12 +12,16 @@ class Scoreboard extends UIPanel{
     t.element.style.setProperty("--border-large", "4px");
     t.element.style.setProperty("--border-small", "2px");
     t.element.style.setProperty("--border-color", "#AAA");
+    t.addClass("viewDisplay");
     t.leftPFP.setStyle("width", "20%");
     t.mainScore.setStyle("width", "60%");
     t.rightPFP.setStyle("width", "20%");
     t.appendChild(t.leftPFP);
     t.appendChild(t.mainScore);
     t.appendChild(t.rightPFP);
+  }
+  getElement(){
+    return this.element;
   }
 }
 
@@ -64,13 +68,15 @@ class ScoreboardPFPItem extends UIPanel{
     t.playerName.setElasticity(0).setStyle("fontSize", "1.5em");
     t.playerName.setStyle("height", "1em").setStyle("justifyContent", "left").setStyle("paddingLeft", "0.3em");
     t.playerNum = new NumberField("XX").addClass("scoreboardPFPPlayerNum");
-    t.foulsNum = new NumberField("XX").addClass("scoreboardPFPPlayerFouls");
-    t.pointsNum = new NumberField("XX").addClass("scoreboardPFPPlayerPoints");
+    t.foulsNum = new NumberField("xX").addClass("scoreboardPFPPlayerFouls");
+    t.pointsNum = new NumberField("xX").addClass("scoreboardPFPPlayerPoints");
     var nums = new UIPanel();
     t.appendChild(t.playerName);
     t.appendChild(nums);
     nums.appendChild(t.playerNum);
+    nums.appendChild(new UIPanel().setStyle("width", "8%").setElasticity(0));
     nums.appendChild(t.foulsNum);
+    nums.appendChild(new UIPanel().setStyle("width", "8%").setElasticity(0));
     nums.appendChild(t.pointsNum);
   }
 }
@@ -99,15 +105,15 @@ class ScoreboardMain extends UIPanel{
     t.setStyles("border-left", "border-right", "var(--border-large) solid var(--border-color)");
     t.homeImage = new ImageField("resources/mascots/froidmedicinelake.png");
     t.guestImage = new ImageField("resources/favicon/favicon-256.png");
-    t.clock = new NumberField("XX:XX");
+    t.clock = new NumberField("xX:XX");
     t.homeName = new TextField("TEAM").setStyle("fontSize", "1.5em");
     t.guestName = new TextField("OPPONENT").setStyle("fontSize", "1.5em");
-    t.homeScore = new NumberField("1XX");
+    t.homeScore = new NumberField("xxX");
     t.period = new ScoreboardPeriodArea();
-    t.guestScore = new NumberField("1XX");
-    t.homeFouls = new NumberField("1X").setElasticity(0).setStyle("width", "20%");
+    t.guestScore = new NumberField("xxX");
+    t.homeFouls = new NumberField("xX").setElasticity(0).setStyle("width", "20%");
     t.playerFoul = new NumberField("XX X").setStyle("width", "30%");
-    t.guestFouls = new NumberField("1X").setElasticity(0).setStyle("width", "20%");
+    t.guestFouls = new NumberField("xX").setElasticity(0).setStyle("width", "20%");
 
     t.row1 = new UIPanel(); // HomeImage Clock GuestImage
     t.row1.element.classList.add("scoreboardRow1");
@@ -134,7 +140,9 @@ class ScoreboardMain extends UIPanel{
     t.row3.element.classList.add("scoreboardRow3");
     t.row3.setStyle("height", "30%");
     t.row3.appendChild(t.homeScore);
-    t.row3.appendChild(t.period);
+    t.row3.appendChild(new UIPanel().setStyle("width", "1.5%").setElasticity(0));
+    t.row3.appendChild(t.period.setStyle("width", "25%"));
+    t.row3.appendChild(new UIPanel().setStyle("width", "1.5%").setElasticity(0));
     t.row3.appendChild(t.guestScore);
 
     t.row4 = new UIPanel();
@@ -146,7 +154,7 @@ class ScoreboardMain extends UIPanel{
     t.row5.setStyle("height", "5%");
     t.row5.appendChild(new TextField("FOULS").setStyle("fontSize", "1.5em"));
     t.row5.appendChild(new UIPanel().setElasticity(0).setStyle("width", "15%"));
-    t.row5.appendChild(new TextField("PLAYER-FOUL").setStyle("fontSize", "1.5em"));
+    t.row5.appendChild(new TextField("PLAYER - FOUL").setStyle("fontSize", "1.5em"));
     t.row5.appendChild(new UIPanel().setElasticity(0).setStyle("width", "15%"));
     t.row5.appendChild(new TextField("FOULS").setStyle("fontSize", "1.5em"));
 

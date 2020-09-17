@@ -33,12 +33,14 @@ class Main{
     t.viewContainer.style.flexGrow = "1";
     t.appRoot.appendChild(t.viewContainer);
 
-    t.generateView("scoreboard", new Scoreboard());
 
     t.model = t.createSportModel("basketball");
     t.model.dbgCreatePlayByPlay();
     t.model.updateFromPBP();
     window.MODEL = t.model;
+    t.generateView("scoreboard", new ScoreboardView(t.model, new Scoreboard()));
+
+    t.getSelectedView().update();
 
     setTimeout(function(){t.onResize()}, 0);
   }
@@ -59,8 +61,7 @@ class Main{
   }
 
   generateView(name, obj){
-    obj.element.classList.add("mainView");
-    this.views.push(["scoreboard", obj]);
+    this.views.push([name, obj]);
   }
 
   setView(vid){
@@ -77,12 +78,7 @@ class Main{
     }
     if(selView == null)
       selView = new NullView();
-    t.viewContainer.appendChild(selView.element);
-  }
-
-  test(){
-    this.getSelectedView().applyStyle({scoreboardPFPPlayerNum: {litColor: "#F00"}});
-    this.getSelectedView().update();
+    t.viewContainer.appendChild(selView.getElement());
   }
 
   getSelectedView(){

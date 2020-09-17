@@ -6,6 +6,13 @@ class BasketballGameClock extends GameClock{
     this.period = 0;
     this.millisLeft = 0;
   }
+  getTime(){
+    var ml = this.millisLeft;
+    return{
+      minutes: Math.floor(ml/60000),
+      seconds: Math.floor(ml/1000) % 60,
+      millis: ml%1000};
+  }
 }
 
 
@@ -68,8 +75,8 @@ class BasketballGameModel extends GameModel{
     super();
     var t = this;
     t.clock = new BasketballGameClock();
-    t.team = new TestBBTeam();
-    t.opp = new TestBBTeam();
+    t.team = new TestBasketballTeam();
+    t.opp = new TestBasketballTeam();
     t.pbp = new BasketballPlayByPlay();
   }
   dbgCreatePlayByPlay(){
@@ -95,6 +102,24 @@ class BasketballGameModel extends GameModel{
   updateRoster(team, pid, name){
     // TODO implement this
   }
+
+  getLastPlayerFoul(millisBack){
+    var t = this;
+    var pls = t.pbp.plays;
+    var lastPlay = pls[pls.length-1];
+    for(var x = pls.length-1; x >= 0; x--){
+      var p = pls[x];
+      if(Math.abs(p.millis - lastPlay.millis) > millisBack || p.period != lastPlay.period)
+        break;
+
+      if(p.type == BasketballPlayType.FOUL_P || p.type == BasketballPlayType.FOUL_T){
+        var fls =(p.team?t.team:t.opp).players[p.pid].fouls;
+        return{player: p.pid, fouls: fls};
+      }
+    }
+    return null;
+  }
+
   updateFromPBP(){
     var t = this;
     t.team.reset();
@@ -113,7 +138,7 @@ class BasketballGameModel extends GameModel{
             t.clock.period = p.pid;
           break;
           default:
-            throw "Unrecognized null-team play type";
+            assert(false, "Unrecognized null-team play type");
           break;
         }
       }
@@ -121,7 +146,7 @@ class BasketballGameModel extends GameModel{
   }
 }
 
-class BBTeam extends Team{
+class BasketballTeam extends Team{
   constructor(){
     super();
   }
@@ -150,13 +175,21 @@ class BBTeam extends Team{
       case T.TURNOVER: pl.turnovers++; break;
       case T.SUB_IN: break;
       case T.SUB_OUT: break;
-      default: throw "Unrecognized play type";
+      default: assert(false, "Unrecognized play type");
     }
+  }
+  onCourt(){
+    var rtn = [];
+    for(var x in this.players){
+      if(this.players[x].onCourt)
+        rtn.push(this.players[x]);
+    }
+    return rtn;
   }
 }
 
 
-class TestBBTeam extends BBTeam{
+class TestBasketballTeam extends BasketballTeam{
   constructor(){
     super();
     var t = this;
@@ -181,6 +214,8 @@ class BasketballPlayer extends Player{
   }
   reset(){
     var t = this;
+    t.onCourt = true;
+
     t.pFouls = 0;
     t.tFouls = 0;
 

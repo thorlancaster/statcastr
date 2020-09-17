@@ -56,6 +56,13 @@ class Team{
     for(var p in this.players)
       this.players[p].reset();
   }
+  getStat(name){
+    var rtn = 0;
+    for(var x in this.players){
+      rtn += this.players[x][name];
+    }
+    return rtn;
+  }
 }
 
 
