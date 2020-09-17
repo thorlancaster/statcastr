@@ -16,6 +16,13 @@ function CLEAR(el){
   }
 }
 
+function assert(bool, str){
+  if(str)
+    if(!bool) throw "Assertion failed: " + str;
+  else
+    if(!bool) throw "Assertion failed";
+}
+
 function tween(arr1, arr2, frac){
   if(arr1.length != arr2.length)
     throw "Tween Length Mismatch";

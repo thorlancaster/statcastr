@@ -110,15 +110,20 @@ class TabSelector extends UIPanel{
     t.appendChild(addend);
     t.items.push(addend);
   }
-  addSelectionObserver(func){
+  addSelectionListener(func){
     if(typeof func == "function") this.selObvs.add(func);
   }
-  removeSelectionObserver(func){this.selObvs.remove(func)}
+  removeSelectionListener(func){this.selObvs.remove(func)}
+  notifySelect(x){
+    this.selObvs.forEach(function(f){
+      f.call(null, x);
+    });
+  }
+
 
   setSelected(name){
     this.onSelect(name);
   }
-
   onSelect(name){
     var t = this;
     var i = t.getItem(name);
@@ -127,9 +132,7 @@ class TabSelector extends UIPanel{
         t.selected = name;
         t.setHighlighted(name);
       }
-      t.selObvs.forEach(function(f){
-        f.call(null, name);
-      });
+      t.notifySelect(name);
     }
   }
   getItem(name){

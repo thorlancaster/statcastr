@@ -26,6 +26,7 @@ class Initializer {
     t.loadScript("js/classes/ui/UIPanel.js");
     t.loadScript("js/classes/viewdisplay/Scoreboard.js");
     t.loadScript("js/classes/model/GameModel.js");
+    t.loadScript("js/classes/model/BasketballGameModel.js");
     // Styles
     t.loadStyle("css/main.css");
 

@@ -22,12 +22,11 @@ class Main{
     vs.addTab("SHOOTIN<u>G</u>", "shooting");
     vs.addTab("<u>H</u>ELP", "help", true);
 
-    vs.addSelectionObserver(function(sel){
+    vs.addSelectionListener(function(sel){
       console.log("Selected: " + sel);
     });
 
-    vs.setSelected("playByPlay");
-
+    vs.setSelected("scoreboard");
 
     t.viewContainer = DCE("div","viewContainer");
     t.viewContainer.style.flexShrink = "1";
@@ -35,7 +34,23 @@ class Main{
     t.appRoot.appendChild(t.viewContainer);
 
     t.generateView("scoreboard", new Scoreboard());
+
+    t.model = t.createSportModel("basketball");
+    t.model.dbgCreatePlayByPlay();
+    t.model.updateFromPBP();
+    window.MODEL = t.model;
+
     setTimeout(function(){t.onResize()}, 0);
+  }
+
+  createSportModel(name){
+    switch(name){
+      case "basketball":
+        return new BasketballGameModel();
+      break;
+      default:
+        throw "Unsupported sport name: " + name;
+    }
   }
 
   init(){
