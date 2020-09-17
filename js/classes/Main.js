@@ -12,7 +12,7 @@ class Main{
     t.appRoot.appendChild(vs.element);
     vs.addIcon("favicon.ico");
 
-    vs.addTab("<u>F</u>ILE", "file");
+    vs.addTab("<u>F</u>ILE", "file", true);
     vs.addTab("<u>S</u>COREBOARD", "scoreboard");
     vs.addTab("SPLIT&nbsp;<u>B</u>OX", "splitBox");
     vs.addTab("<u>T</u>EAM STATS", "teamStats");
@@ -20,7 +20,13 @@ class Main{
     vs.addTab("<u>P</u>LAY-BY-PLAY", "playByPlay");
     vs.addTab("S<u>C</u>ORING", "scoring");
     vs.addTab("SHOOTIN<u>G</u>", "shooting");
-    vs.addTab("<u>H</u>ELP", "help");
+    vs.addTab("<u>H</u>ELP", "help", true);
+
+    vs.addSelectionObserver(function(sel){
+      console.log("Selected: " + sel);
+    });
+
+    vs.setSelected("playByPlay");
 
 
     t.viewContainer = DCE("div","viewContainer");

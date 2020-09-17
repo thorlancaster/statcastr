@@ -42,7 +42,7 @@ class Initializer {
         t.setLoader("Error<br/>See console for details");
       }
     });
-    window.addEventListener("resize", function(e){ MAIN.onResize(e); });
+    window.addEventListener("resize", function(e){if(MAIN.onResize) MAIN.onResize(e);});
     window.addEventListener("focus", function(e){if(MAIN.onFocus) MAIN.onFocus(e);});
     window.addEventListener("blur", function(e){if(MAIN.onBlur) MAIN.onBlur(e);});
     window.addEventListener("keydown", function(e){if(MAIN.keyDown) MAIN.keyDown(e);});
