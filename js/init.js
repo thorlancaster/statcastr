@@ -9,39 +9,22 @@ var APP_ROOT = "main";
 class Initializer {
   init(){
     var t = this;
-    t.scripts = [];
-    t.remaining = 0;
     t.setLoader(true);
     // Load dependencies
-    if(DEBUG){
-      // Debug-only dependencies
-
-    } else {
-      // Production-only dependencies
-
-    }
+    t.scriptLoader = new ScriptLoader(t.run.bind(t));
+    var l = t.scriptLoader;
     // Constant dependencies and Application Classes
-    t.loadScript("js/libs/utils.js");
-    t.loadScript("js/classes/Main.js");
-    t.loadScript("js/classes/ui/UIPanel.js");
-    t.loadScript("js/classes/viewdisplay/Scoreboard.js");
-    t.loadScript("js/classes/model/GameModel.js");
-    t.loadScript("js/classes/model/BasketballGameModel.js");
+    l.loadScript("js/libs/utils.js");
+    l.loadScript("js/classes/Main.js");
+    l.loadScript("js/classes/ui/UIPanel.js");
+    l.loadScript("js/classes/viewdisplay/Scoreboard.js");
+    l.loadScript("js/classes/model/GameModel.js");
+    l.loadScript("js/classes/model/BasketballGameModel.js");
     // Styles
     t.loadStyle("css/main.css");
 
     // Start application when loaded
     window.addEventListener("load", function(){
-      try{
-        window.MAIN = new Main();
-        MAIN.init(APP_ROOT);
-        t.animate(t);
-        t.setLoader(false);
-      }
-      catch(e){
-        console.error(e);
-        t.setLoader("Error<br/>See console for details");
-      }
     });
     window.addEventListener("resize", function(e){if(MAIN.onResize) MAIN.onResize(e);});
     window.addEventListener("focus", function(e){if(MAIN.onFocus) MAIN.onFocus(e);});
@@ -53,6 +36,47 @@ class Initializer {
   animate(){
     // MAIN.animate();
     // requestAnimationFrame(initializer.animate);
+  }
+
+  run(){
+    var t = this;
+    try{
+      window.MAIN = new Main();
+      MAIN.init(APP_ROOT);
+      t.animate(t);
+      t.setLoader(false);
+    }
+    catch(e){
+      console.error(e);
+      t.setLoader("Error<br/>See console for details");
+    }
+  }
+
+  loadStyle(src){
+    var el = document.createElement("link");
+    el.rel = "stylesheet";
+    el.href = src;
+    document.head.appendChild(el);
+  }
+
+  setLoader(v){
+    var el = document.getElementById("loader");
+    if(el){
+      if(v == true)
+        el.style.display = "block";
+      else if(v == false)
+        el.style.display = "none";
+      else
+        el.innerHTML = v;
+    } else console.warn("Cannot find loader");
+  }
+}
+
+class ScriptLoader{
+  constructor(callback){
+    this.remaining = 0;
+    this.scripts = [];
+    this.callback = callback;
   }
   loadScript(src, retry){
     var t = this;
@@ -66,7 +90,7 @@ class Initializer {
     el.addEventListener("load", function(){
       t.remaining--;
       if(t.remaining == 0){
-        t.execScripts();
+        t.addScripts();
       }
     });
     el.addEventListener("error", function(){
@@ -74,32 +98,23 @@ class Initializer {
     });
     document.head.appendChild(el);
   }
-  execScripts(){
-    for(var x = 0; x < this.scripts.length; x++){
+  addScripts(){
+    var t = this;
+    for(var x = 0; x < t.scripts.length; x++){
       var el = document.createElement("script");
-      el.src = this.scripts[x];
+      el.src = t.scripts[x];
       document.head.appendChild(el);
+      t.remaining++;
+      el.addEventListener("load", function(){
+        t.remaining--;
+        if(t.remaining == 0){
+          t.execScripts();
+        }
+      });
     }
   }
-
-
-
-  loadStyle(src){
-    var el = document.createElement("link");
-    el.rel = "stylesheet";
-    el.href = src;
-    document.head.appendChild(el);
-  }
-  setLoader(v){
-    var el = document.getElementById("loader");
-    if(el){
-      if(v == true)
-        el.style.display = "block";
-      else if(v == false)
-        el.style.display = "none";
-      else
-        el.innerHTML = v;
-    } else console.warn("Cannot find loader");
+  execScripts(){
+    this.callback.call();
   }
 }
 
