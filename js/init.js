@@ -17,10 +17,16 @@ class Initializer {
     l.loadScript("js/libs/utils.js");
     l.loadScript("js/classes/Main.js");
     l.loadScript("js/classes/ui/UIPanel.js");
-    l.loadScript("js/classes/viewdisplay/Scoreboard.js");
+    // MVC Model classes
     l.loadScript("js/classes/model/GameModel.js");
     l.loadScript("js/classes/model/BasketballGameModel.js");
+    // MVC View / ViewDisplay Classes
+    l.loadScript("js/classes/viewdisplay/ViewDisplayCommon.js");
+    l.loadScript("js/classes/viewdisplay/ScoreboardDisplay.js");
+    l.loadScript("js/classes/viewdisplay/PlayByPlayDisplay.js");
+    l.loadScript("js/classes/view/View.js");
     l.loadScript("js/classes/view/ScoreboardView.js");
+    l.loadScript("js/classes/view/PlayByPlayView.js");
     // Styles
     t.loadStyle("css/main.css");
 
@@ -43,7 +49,7 @@ class Initializer {
     var t = this;
     try{
       window.MAIN = new Main();
-      MAIN.init(APP_ROOT);
+      // MAIN.init(APP_ROOT);
       t.animate(t);
       t.setLoader(false);
     }

@@ -1,7 +1,7 @@
 // This file contains the classes that comprise the Scoreboard VIEW.
 // These classes are not a model and not a controller. This is just a VIEW.
 
-class Scoreboard extends UIPanel{
+class ScoreboardDisplay extends UIPanel{
   constructor(){
     super();
     var t = this;
@@ -19,9 +19,6 @@ class Scoreboard extends UIPanel{
     t.appendChild(t.leftPFP);
     t.appendChild(t.mainScore);
     t.appendChild(t.rightPFP);
-  }
-  getElement(){
-    return this.element;
   }
 }
 
@@ -90,7 +87,7 @@ class ScoreboardPeriodArea extends UIPanel{
     t.label = new TextField("PERIOD")
     t.label.setStyle("height", "1.1em");
     t.label.setElasticity(0);
-    t.number = new NumberField("X");
+    t.number = new NumberField("X").addClass("scoreboardPeriod");
     t.appendChild(t.label);
     t.appendChild(t.number);
   }
@@ -105,15 +102,15 @@ class ScoreboardMain extends UIPanel{
     t.setStyles("border-left", "border-right", "var(--border-large) solid var(--border-color)");
     t.homeImage = new ImageField("resources/mascots/froidmedicinelake.png");
     t.guestImage = new ImageField("resources/favicon/favicon-256.png");
-    t.clock = new NumberField("xX:XX");
+    t.clock = new NumberField("xX:XX").addClass("scoreboardClock");
     t.homeName = new TextField("TEAM").setStyle("fontSize", "1.5em");
     t.guestName = new TextField("OPPONENT").setStyle("fontSize", "1.5em");
-    t.homeScore = new NumberField("xxX");
-    t.period = new ScoreboardPeriodArea();
-    t.guestScore = new NumberField("xxX");
-    t.homeFouls = new NumberField("xX").setElasticity(0).setStyle("width", "20%");
+    t.homeScore = new NumberField("xxX").addClass("scoreboardHomeScore");
+    t.period = new ScoreboardPeriodArea().setStyle("width", "20%").setElasticity(0);
+    t.guestScore = new NumberField("xxX").addClass("scoreboardGuestScore");
+    t.homeFouls = new NumberField("xX").setElasticity(0).setStyle("width", "20%").addClass("scoreboardHomeFouls");
     t.playerFoul = new NumberField("XX X").setStyle("width", "30%");
-    t.guestFouls = new NumberField("xX").setElasticity(0).setStyle("width", "20%");
+    t.guestFouls = new NumberField("xX").setElasticity(0).setStyle("width", "20%").addClass("scoreboardGuestFouls");
 
     t.row1 = new UIPanel(); // HomeImage Clock GuestImage
     t.row1.element.classList.add("scoreboardRow1");

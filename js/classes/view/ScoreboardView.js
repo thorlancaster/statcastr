@@ -1,18 +1,3 @@
-class View{
-  constructor(model, viewDisp){
-    this.model = model;
-    this.viewDisp = viewDisp;
-  }
-  update(){
-    throw "Abstract Method";
-  }
-  defaultStyle(){
-    throw "Abstract Method";
-  }
-  getElement(){return this.viewDisp.getElement()}
-  resize(){this.viewDisp.resize()}
-  applyStyle(a){this.viewDisp.applyStyle(a)}
-}
 
 class ScoreboardView extends View{
   constructor(model, viewDisp){
@@ -58,7 +43,7 @@ class ScoreboardView extends View{
     }
   }
   defaultStyle(){
-    this.applyStyle({scoreboardPFPPlayerNum: {litColor: "#F00"}});
+    this.applyStyle(Constants.defaultStyle);
     this.update();
   }
 }

@@ -24,8 +24,26 @@ class UIPanel{
     this.applySize();
   }
 
+  /**
+  * Apply a JSON-based style to this object and its children.
+  * The style can either be a JSON object in the form of
+  * {class: {key1: value1, key2:value2...}, class2...}
+  * or an array of such objects.
+  * @param obj JSON style object
+  */
   applyStyle(obj){
-    for(var x = 0; x < this.children.length; x++){this.children[x].applyStyle(obj);}}
+    if(Array.isArray(obj)){
+      for(var i = 0; i < obj.length; i++){
+        for(var x = 0; x < this.children.length; x++){
+          this.children[x].applyStyle(obj[i]);
+        }
+      }
+    }else{
+      for(var x = 0; x < this.children.length; x++){
+        this.children[x].applyStyle(obj);
+      }
+    }
+  }
   update(){
     for(var x = 0; x < this.children.length; x++){this.children[x].update();}}
   calcSize(){
@@ -50,6 +68,9 @@ class UIPanel{
     return oldVal;
   }
 
+  getElement(){
+    return this.element;
+  }
 
   addClass(name){
     this.element.classList.add(name); return this;}
@@ -89,6 +110,7 @@ class TabSelector extends UIPanel{
   constructor(){
     super();
     var t = this;
+    t.addClass("tabSelector");
     t.setStyle("width", "100%");
     t.element.style.setProperty("--ts-height", "1.5em");
     t.setStyle("height", "var(--ts-height)").setElasticity(0);
@@ -111,8 +133,7 @@ class TabSelector extends UIPanel{
     t.items.push(addend);
   }
   addSelectionListener(func){
-    if(typeof func == "function") this.selObvs.add(func);
-  }
+    if(typeof func == "function") this.selObvs.add(func);}
   removeSelectionListener(func){this.selObvs.remove(func)}
   notifySelect(x){
     this.selObvs.forEach(function(f){
@@ -120,6 +141,11 @@ class TabSelector extends UIPanel{
     });
   }
 
+  setMaxVisible(num){
+    for(var x = 0; x < this.items.length; x++){
+      this.items[x].setStyle("display", x >= num ? "none" : "");
+    }
+  }
 
   setSelected(name){
     this.onSelect(name);
@@ -186,6 +212,41 @@ class TabSelectorItem extends TextField{
   }
 }
 
+class TableField extends UIPanel{
+  constructor(columns){
+    super();
+    var t = this;
+    t.columns = columns;
+    t.addClass("tableField");
+    t.table = DCE("table");
+    var ts = t.table.style;
+    ts.width = "100%";
+    t.thead = t.createRow(t.columns, true);
+    t.thead.style.fontSize = "1.2em";
+    t.table.appendChild(t.thead);
+    t.createRows(100);
+    t.appendChild(t.table);
+  }
+  createRows(num){
+    for(var x = 0; x < num; x++){
+      this.table.appendChild(this.createRow(this.columns));
+    }
+  }
+  createRow(cols, head){
+    var el = DCE("tr");
+    for(var x = 0; x < cols.length; x++){
+      var itm = head ? DCE("th") : DCE("td");
+      itm.textContent = cols[x];
+      el.appendChild(itm);
+    }
+    return el;
+  }
+  // Way faster than messing with DOM nodes every time table needs updated
+  setCell(x, y, text){
+
+  }
+}
+
 class ImageField extends UIPanel{
   constructor(url){
     super();
@@ -233,10 +294,10 @@ class NumberField extends UIPanel{
     super();
     var t = this;
     t.format = format;
-    t.value = 1234;
-    t.litColor = "#F70";
-    t.unlitColor = "#201311";
-    t.bgColor = "#100909";
+    t.value = 0;
+    t.litColor = "#FFF";
+    t.unlitColor = "#111"
+    t.bgColor = "#000";
     t.addClass("numberField");
     t.canvas = DCE("canvas");
     t.element.appendChild(t.canvas);
@@ -364,6 +425,8 @@ class NumberField extends UIPanel{
        ctx.fillRect(Math.floor(xpos+nw/2-sw/2), ypos+sw, sw, sw);
        ctx.fillRect(Math.floor(xpos+nw/2-sw/2), ypos+nh-sw*2, sw, sw);
      }
+   } else if(!spChars && snum == "P"){
+     sa=1,sb=1,sc=0,sd=0,se=1,sf=1,sg=1;
    }
    // Draw the lit segments
    if(sa) ctx.fillRect(xpos, ypos, nw, sw);

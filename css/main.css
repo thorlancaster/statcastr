@@ -5,12 +5,16 @@ html, body{
 
 body{
   background: #057;
-  background: linear-gradient(#344, #111);
+  --main-bg1: #344;
+  --main-bg2: #111;
+  --gradient-bg: linear-gradient(var(--main-bg1), var(--main-bg2));
+  background: var(--gradient-bg);
   --sel-fg: #FF0;
   --sel-bg: #000;
   color: #FFF;
   margin: 0;
   font-family: "Helvetica", "sans-serif";
+  user-select: none;
 }
 
 .viewContainer{
@@ -19,7 +23,7 @@ body{
   overflow: hidden;
 }
 
-.mainTabSelector{
+.tabSelector{
   background: linear-gradient(#333, #373740);
 }
 
@@ -27,6 +31,16 @@ body{
   transition: color 0.2s, background 0.2s;
   font-weight: 500;
 }
+
+
+.tableField table, .tableField td, .tableField th{
+  border: 1px solid #000;
+}
+
+.tableField th{
+  text-align: center;
+}
+
 
 .tabSelectorItem.selected{
   color: var(--sel-fg);
@@ -50,6 +64,7 @@ body{
 .textField{
   align-items: center;
   justify-content: center;
+  white-space: nowrap;
 }
 
 #main{
