@@ -12,6 +12,10 @@ class PlayByPlayDisplay extends UIPanel{
     t.main.setStyles("marginTop", "marginBottom", "2em");
     t.appendChild(t.main);
   }
+
+  setRow(x, team, time, score, play){
+    this.main.table.setRow(x, [team, time, score, play]);
+  }
 }
 
 class PlayByPlayMain extends UIPanel{
@@ -30,9 +34,9 @@ class PlayByPlayMain extends UIPanel{
     t.selector.setSelected("recent");
     t.selector.setMaxVisible(5);
     t.selector.addSelectionListener(t.onSelect.bind(t));
-    t.label = new TextField("Recent Plays").setStyle("justifyContent", "left")
+    t.label = new TextField("Most Recent Plays").setStyle("justifyContent", "left")
     .setStyle("marginLeft", "0.2em").setStyle("fontWeight", "bold").setStyle("fontSize", "1.5em");
-    t.table = new TableField(["Team", "Time", "Score", "Play"]);
+    t.table = new TableField(["Team", "  Time  ", "Score", "Play"]);
     t.appendChild(t.selector);
     t.appendChild(t.label);
     t.appendChild(t.table);
@@ -40,7 +44,7 @@ class PlayByPlayMain extends UIPanel{
   onSelect(txt){
     var ls = "";
     switch(txt){
-      case "recent": ls = "Most Recent"; break;
+      case "recent": ls = "Most Coocent"; break;
       case "1": ls = "1st Period"; break;
       case "2": ls = "2nd Period"; break;
       case "3": ls = "3rd Period"; break;

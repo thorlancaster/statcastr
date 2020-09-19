@@ -100,8 +100,8 @@ class ScoreboardMain extends UIPanel{
     t.element = DCE("div", "scoreboardMain", "uiPanel");
     t.setStyle("flexDirection", "column");
     t.setStyles("border-left", "border-right", "var(--border-large) solid var(--border-color)");
-    t.homeImage = new ImageField("resources/mascots/froidmedicinelake.png");
-    t.guestImage = new ImageField("resources/favicon/favicon-256.png");
+    t.homeImage = new ImageField();
+    t.guestImage = new ImageField();
     t.clock = new NumberField("xX:XX").addClass("scoreboardClock");
     t.homeName = new TextField("TEAM").setStyle("fontSize", "1.5em");
     t.guestName = new TextField("OPPONENT").setStyle("fontSize", "1.5em");

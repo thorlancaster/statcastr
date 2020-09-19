@@ -32,13 +32,19 @@ class Main{
     t.generateView("scoreboard", new ScoreboardView(t.model, new ScoreboardDisplay()));
     t.generateView("playByPlay", new PlayByPlayView(t.model, new PlayByPlayDisplay()));
     t.setView("playByPlay");
-    t.getSelectedView().update();
+    t.update();
 
     // Allow the page to render before finishing
     setTimeout(function(){
       t.onResize();
       t.viewSelector.setSelected(t.selectedView);
     }, 0);
+
+    setTimeout(function(){
+      t.model.pbp.addPlay(new BasketballPBPItem(2, 470 * 1000, "24", true, BasketballPlayType.DUNK_MADE));
+      t.model.updateFromPBP();
+      t.update();
+    }, 5000);
   }
 
   onViewSelected(sel){
@@ -113,6 +119,10 @@ class Main{
         return this.views[v][1];
     }
     return this.NULL_VIEW;
+  }
+
+  update(){
+    this.getSelectedView().update();
   }
 
   onResize(){

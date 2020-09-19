@@ -17,6 +17,8 @@ class Initializer {
     l.loadScript("js/libs/utils.js");
     l.loadScript("js/classes/Main.js");
     l.loadScript("js/classes/ui/UIPanel.js");
+    l.loadScript("js/classes/ui/TabSelector.js");
+    l.loadScript("js/classes/ui/TableField.js");
     // MVC Model classes
     l.loadScript("js/classes/model/GameModel.js");
     l.loadScript("js/classes/model/BasketballGameModel.js");

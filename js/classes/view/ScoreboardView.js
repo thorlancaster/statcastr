@@ -7,8 +7,13 @@ class ScoreboardView extends View{
   update(){
     var t = this;
     var m = t.model;
+    var msc = t.viewDisp.mainScore;
     t.updatePFP(t.viewDisp.leftPFP, m.team.onCourt());
     t.updatePFP(t.viewDisp.rightPFP, m.opp.onCourt());
+    msc.homeImage.setSrc(m.team.image);
+    msc.homeName.setText(m.team.name);
+    msc.guestImage.setSrc(m.opp.image);
+    msc.guestName.setText(m.opp.name);
     var ms = t.viewDisp.mainScore;
     var time = m.clock.getTime();
     ms.clock.setValue(time.minutes*100 + time.seconds);
@@ -23,6 +28,7 @@ class ScoreboardView extends View{
     else
       ms.playerFoul.setValue(null);
     t.viewDisp.update();
+
   }
   updatePFP(view, plyrs){
     var items = view.items;

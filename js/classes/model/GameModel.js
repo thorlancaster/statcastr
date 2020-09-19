@@ -23,6 +23,30 @@ class PlayByPlay{
   removePlay(x){
     throw "Abstract Method";
   }
+  getPlays(length, args){
+    if(args != null){
+      var rtn = [];
+      var keys = Object.keys(args);
+      for(var x = 0; x < this.plays.length; x++){
+        var play = this.plays[x];
+        var add = true;
+        for(var y = 0; y < keys.length; y++){
+          if(play[keys[y]] !== args[keys[y]]){
+            add = false; break;
+          }
+        }
+        if(add)
+          rtn.push(play);
+        if(length > 0 && rtn.length == length)
+          break;
+      }
+      return rtn;
+    }
+    if(length > 0){
+      return this.plays.splice(0-length);
+    }
+    return this.plays;
+  }
 }
 
 class PBPItem{
@@ -37,13 +61,26 @@ class PBPItem{
     this.millis = millis;
     this.pid = pid;
     this.team = team;
+    this.rTeamScore = 0; // Running team and Opponent scores after this play
+    this.rOppScore = 0; // These are to be computed by sport-specific Game Models
+  }
+  getTime(){
+    return {minutes: Math.floor(this.millis / 60000), seconds: Math.floor((this.millis / 1000) % 60), millis: this.millis % 1000};
+  }
+  getTimeStr(){
+    var t = this.getTime();
+    return ""+t.minutes + (t.seconds < 10 ? ":0"+t.seconds : ":"+t.seconds);
   }
 }
 
 
 class Team{
-  constructor(){
+  constructor(info){
     var t = this;
+    t.town = info.town; // Ex. "Froid-Lake"
+    t.name = info.name; // Ex. "Redhawks"
+    t.abbr = info.abbr; // Ex. "FML";
+    t.image = info.image; // "Ex resources/mascots/froidmedicinelake.png"
     t.players = []; // Associative array by player #
   }
   addPlayer(p){

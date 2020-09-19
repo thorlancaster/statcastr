@@ -32,13 +32,18 @@ body{
   font-weight: 500;
 }
 
-
+.tableField{
+  user-select: text;
+}
 .tableField table, .tableField td, .tableField th{
   border: 1px solid #000;
+  height: 1em;
 }
-
+.tableField th, .tableField td{
+  padding-left: 0.2em;
+}
 .tableField th{
-  text-align: center;
+  text-align: left;
 }
 
 

@@ -37,6 +37,40 @@ const BasketballPlayType = {
   SET_CLOCK: 18,
   SUB_IN: 19,
   SUB_OUT: 20,
+  longStr: [
+    "INVALID",
+    "Foul",
+    "Technical Foul",
+    "Made Free Throw",
+    "Missed Free Throw",
+    "Made 2-Pointer",
+    "Missed 2-Pointer",
+    "Made Dunk",
+    "Missed Dunk",
+    "Made 3-Pointer",
+    "Missed 3-Pointer",
+    "Offensive Rebound",
+    "Defensive Rebound",
+    "Rebound",
+    "Assist",
+    "Block",
+    "Steal",
+    "Turnover",
+    "Clock Set",
+    "Sub In",
+    "Sub Out"
+  ],
+  pointsOf: function(x){
+    var t = this;
+    switch(x){
+      case t.FT_MADE: return 1;
+      case t.P2_MADE: case t.DUNK_MADE: return 2;
+      case t.P3_MADE: return 3;
+      default:
+      return 0;
+    }
+  },
+  toLongStr: function(x){return this.longStr[x];},
   isValid: function(x){
     return x >= 1 && x <= 20;
   }
@@ -75,8 +109,17 @@ class BasketballGameModel extends GameModel{
     super();
     var t = this;
     t.clock = new BasketballGameClock();
-    t.team = new TestBasketballTeam();
-    t.opp = new TestBasketballTeam();
+    t.team = new TestBasketballTeam(
+      { town: "Froid Medicine-Lake", 
+        abbr: "FML",
+        name: "Redhawks",
+        image: "resources/mascots/froidmedicinelake.png"});
+    t.opp = new TestBasketballTeam(
+      { town: "Bozeman",
+        abbr: "STC",
+        name: "StatCastrs",
+        image: "resources/favicon/favicon-256.png"}
+    );
     t.pbp = new BasketballPlayByPlay();
   }
   dbgCreatePlayByPlay(){
@@ -92,6 +135,29 @@ class BasketballGameModel extends GameModel{
     p.addPlay(new BasketballPBPItem(1, 445 * 1000, "21", false, BasketballPlayType.ASSIST));
     p.addPlay(new BasketballPBPItem(1, 440 * 1000, "24", false, BasketballPlayType.DUNK_MADE));
     p.addPlay(new BasketballPBPItem(1, 435 * 1000, "44", false, BasketballPlayType.DUNK_MISS));
+    p.addPlay(new BasketballPBPItem(2, 475 * 1000, "3", true, BasketballPlayType.DUNK_MADE));
+  }
+  /**
+   * Get human-readable information on a Play-by-Play
+   * @param {*} pbp PBPItem object
+   * @param {*} obj Optional object returned from last invocation. Improves performance.
+   */
+  getPBPInfo(pbp, obj){
+    if (!obj) obj = {team: {}};
+    var tm = pbp.team ? this.team : this.opp;
+    var T = BasketballPlayType;
+    var timeStr = pbp.getTimeStr();
+    obj.team.name = tm.name;
+    obj.team.abbr = tm.abbr;
+    obj.team.img = tm.image;
+    obj.time = "P"+pbp.period+" "+timeStr;
+    obj.score = pbp.rTeamScore + "-" + pbp.rOppScore;
+    if(pbp.type == T.SET_CLOCK)
+      obj.play = "Clock set to " + pbp.getTimeStr();
+    else
+      obj.play = T.toLongStr(pbp.type)+" by "+tm.players[pbp.pid].name;
+    // TYPE by #N Name
+    return obj;
   }
   /**
   * Update a roster
@@ -125,13 +191,21 @@ class BasketballGameModel extends GameModel{
     t.team.reset();
     t.opp.reset();
     for(var x = 0; x < t.pbp.plays.length; x++){
-      var p = t.pbp.plays[x];
+      var p = t.pbp.plays[x]; // Current Play
+      var lp = t.pbp.plays[x-1]; // Last Play
       if(p.millis)
         t.clock.millisLeft = p.millis;
-      if(p.team == true)
+      if(p.period)
+        t.clock.period = p.period;
+      if(p.team == true){
         t.team.doPlay(p);
-      else if(p.team == false)
+        p.rTeamScore = (lp?lp.rTeamScore:0) + BasketballPlayType.pointsOf(p.type);
+        p.rOppScore = lp.rOppScore;
+      }else if(p.team == false){
         t.opp.doPlay(p);
+        p.rTeamScore = lp.rTeamScore;
+        p.rOppScore = (lp?lp.rOppScore:0) + BasketballPlayType.pointsOf(p.type);
+      }
       else{ // Play does not belong to either team, must be game mgmt
         switch(p.type){
           case BasketballPlayType.SET_CLOCK:
@@ -147,8 +221,8 @@ class BasketballGameModel extends GameModel{
 }
 
 class BasketballTeam extends Team{
-  constructor(){
-    super();
+  constructor(info){
+    super(info);
   }
   doPlay(p){
     var t = this;
@@ -190,8 +264,8 @@ class BasketballTeam extends Team{
 
 
 class TestBasketballTeam extends BasketballTeam{
-  constructor(){
-    super();
+  constructor(info){
+    super(info);
     var t = this;
     var p4 = new BasketballPlayer("1", "Isaac Johnson");
     var p1 = new BasketballPlayer("3", "Javonne Nesbit");
