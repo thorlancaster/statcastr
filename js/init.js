@@ -26,7 +26,9 @@ class Initializer {
     l.loadScript("js/classes/viewdisplay/ViewDisplayCommon.js");
     l.loadScript("js/classes/viewdisplay/ScoreboardDisplay.js");
     l.loadScript("js/classes/viewdisplay/PlayByPlayDisplay.js");
+    l.loadScript("js/classes/viewdisplay/TeamStatsDisplay.js");
     l.loadScript("js/classes/view/View.js");
+    l.loadScript("js/classes/view/TeamStatsView.js");
     l.loadScript("js/classes/view/ScoreboardView.js");
     l.loadScript("js/classes/view/PlayByPlayView.js");
     // Styles

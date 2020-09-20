@@ -1,7 +1,8 @@
 
 class ScoreboardView extends View{
-  constructor(model, viewDisp){
-    super(model, viewDisp);
+  constructor(model){
+    super(model);
+    this.viewDisp = new ScoreboardDisplay();
     this.defaultStyle();
   }
   update(){

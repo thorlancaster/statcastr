@@ -24,11 +24,12 @@ class PlayByPlay{
     throw "Abstract Method";
   }
   getPlays(length, args){
+    var t = this;
+    var rtn = [];
     if(args != null){
-      var rtn = [];
       var keys = Object.keys(args);
-      for(var x = 0; x < this.plays.length; x++){
-        var play = this.plays[x];
+      for(var x = t.plays.length - 1; x >= 0; x--){
+        var play = t.plays[x];
         var add = true;
         for(var y = 0; y < keys.length; y++){
           if(play[keys[y]] !== args[keys[y]]){
@@ -43,9 +44,13 @@ class PlayByPlay{
       return rtn;
     }
     if(length > 0){
-      return this.plays.splice(0-length);
+      for(var x = t.plays.length - 1; x >= 0; x--){
+        rtn.push(t.plays[x]);
+        if(rtn.length == length)
+          return rtn;
+      }
     }
-    return this.plays;
+    return t.plays;
   }
 }
 

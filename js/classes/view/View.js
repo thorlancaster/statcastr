@@ -1,24 +1,44 @@
 class View{
-  constructor(model, viewDisp){
+  constructor(model){
     this.model = model;
-    this.viewDisp = viewDisp;
+    this.viewDisp = null; // Mandatory for subclasses to set
+    this.header = null; // Optional for subclasses to set
   }
   update(){
-    throw "Abstract Method";
+    this.viewDisp.update();
+    if(this.header){
+      this.header.setStateFromModel(this.model);
+      this.header.update();
+    }
   }
   defaultStyle(){
-    throw "Abstract Method";
+    this.applyStyle(Constants.defaultStyle);
+    this.update();
   }
-  getElement(){return this.viewDisp.getElement()}
-  resize(){this.viewDisp.resize()}
-  applyStyle(a){this.viewDisp.applyStyle(a)}
+  getHeaderElement(){
+    if(this.header)
+      return this.header.getElement();
+  }
+  getMainElement(){
+      return this.viewDisp.getElement();
+  }
+  resize(){
+    this.viewDisp.resize();
+    if(this.header)
+      this.header.resize();
+  }
+  applyStyle(a){
+    this.viewDisp.applyStyle(a);
+    if(this.header)
+      this.header.applyStyle(a);
+  }
 }
 
 class NullView extends View{
   constructor(){
-    super(null, new TextField().setHTML("This view is not available yet.<br/>We apologize for the inconvenience.")
-    .setStyle("textAlign", "center").setStyle("height", "100%").setStyle("fontSize", "1.5em"));
+    super(null);
+    this.viewDisp = new TextField()
+    .setHTML("This view is not available yet.<br/>We apologize for the inconvenience.")
+    .setStyle("textAlign", "center").setStyle("height", "100%").setStyle("fontSize", "1.5em");
   }
-  update(){}
-  defaultStyle(){};
 }

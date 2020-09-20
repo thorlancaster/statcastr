@@ -1,6 +1,7 @@
 class UIPanel{
   constructor(){
     this.element = DCE("div", "uiPanel");
+    this.element._dbgobj = this;
     this.children = [];
   }
 

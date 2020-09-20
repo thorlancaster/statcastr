@@ -104,5 +104,16 @@ class TabSelectorItem extends TextField{
         this.clickEl(e.parentElement);
     }
 }
-  
+
+
+class TabbedPane extends UIPanel{
+    constructor(item){
+        super();
+        var t = this;
+        t.selector = new TabSelector();
+        t.item = item;
+        t.appendChild(selector);
+        t.appendChild(item);
+    }
+}
   

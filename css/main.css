@@ -20,7 +20,15 @@ body{
 .viewContainer{
   width: 100%;
   /* height: 100%; */
-  overflow: hidden;
+  /* overflow: hidden; */
+  overflow: auto;
+}
+
+.viewDisp{
+  margin: 2em auto;
+  background: var(--gradient-bg);
+  border: 1px solid black;
+  width: 85%;
 }
 
 .tabSelector{

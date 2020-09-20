@@ -29,8 +29,9 @@ class Main{
     t.model.updateFromPBP();
     window.MODEL = t.model;
 
-    t.generateView("scoreboard", new ScoreboardView(t.model, new ScoreboardDisplay()));
-    t.generateView("playByPlay", new PlayByPlayView(t.model, new PlayByPlayDisplay()));
+    t.generateView("scoreboard", new ScoreboardView(t.model));
+    t.generateView("playByPlay", new PlayByPlayView(t.model));
+    t.generateView("teamStats", new TeamStatsView(t.model));
     t.setView("playByPlay");
     t.update();
 
@@ -57,6 +58,7 @@ class Main{
       this.setView(sel);
     }
     this.getSelectedView().resize();
+    this.getSelectedView().update();
   }
 
   createViewSelector(){
@@ -110,7 +112,9 @@ class Main{
     }
     if(selView == null)
       selView = t.NULL_VIEW;
-    t.viewContainer.appendChild(selView.getElement());
+    var h = selView.getHeaderElement();
+    if(h) t.viewContainer.appendChild(h);
+    t.viewContainer.appendChild(selView.getMainElement());
   }
 
   getSelectedView(){
