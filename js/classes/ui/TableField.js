@@ -2,18 +2,31 @@ class TableField extends UIPanel{
     constructor(columns){
       super();
       var t = this;
-      t.columns = columns;
       t.addClass("tableField");
       t.table = DCE("table");
       var ts = t.table.style;
       ts.width = "100%";
+      t.appendChild(t.table);
+      t.setColumns(columns);
+    }
+
+    /**
+     * Sets the columns of this table by name.
+     * NOTE: This also clears the contents of the table,
+     * and anything it the <colgroup>/
+     * @param {Array} columns array of column names
+     */
+    setColumns(columns){
+      var t = this;
+      t.columns = columns;
+      CLEAR(t.table);
       t.colgroup = DCE("colgroup");
+      t.table.appendChild(t.colgroup);
       t.thead = t.createRow(t.columns, true);
       t.thead.style.fontSize = "1.2em";
-      t.table.appendChild(t.colgroup);
       t.table.appendChild(t.thead);
-      t.appendChild(t.table);
     }
+
     createRows(num){
       for(var x = 0; x < num; x++){
         this.table.appendChild(this.createRow(this.columns.length));

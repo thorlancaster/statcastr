@@ -12,7 +12,7 @@ class ScoreboardDisplay extends UIPanel{
     t.element.style.setProperty("--border-large", "4px");
     t.element.style.setProperty("--border-small", "2px");
     t.element.style.setProperty("--border-color", "#AAA");
-    t.addClass("viewDisplay");
+    t.addClass("viewDisplayFull");
     t.leftPFP.setStyle("width", "20%");
     t.mainScore.setStyle("width", "60%");
     t.rightPFP.setStyle("width", "20%");
