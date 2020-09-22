@@ -289,6 +289,7 @@ class BasketballPlayer extends Player{
   reset(){
     var t = this;
     t.onCourt = true;
+    t.playMs = 0;
 
     t.pFouls = 0;
     t.tFouls = 0;
@@ -318,13 +319,33 @@ class BasketballPlayer extends Player{
   get fgMade(){return this.p2Made + this.p3Made}
   get fgMiss(){return this.p2Miss + this.p3Miss}
   get fgTotal(){return this.fgMade + this.fgMiss}
+  get ftTotal(){return this.ftMade + this.ftMiss}
   get shotsMade(){return this.ftMade + this.fgMade}
   get shotsMiss(){return this.ftMiss + this.fgMiss}
   get shotsTotal(){return this.shotsMade + this.shotsMiss}
   get fgPercentage(){return this.fgMade / this.fgTotal * 100}
   get ftPercentage(){return this.ftMade / this.ftTotal * 100}
+  get fgStr(){return this.fgMade + " / " + this.fgTotal}
+  get ftStr(){return this.ftMade + " / " + this.ftTotal}
+
+  get numNameStr(){
+    var sid = this.id;
+    if(sid.length == 1) sid = "0" + sid;
+    return sid + " " + this.name;
+  }
   get nbaEfficiency(){
     var t = this;
     return t.points + t.rebounds + t.assists + t.steals + t.blocks - (t.fgMiss + t.ftMiss + t.turnovers);
+  }
+  get playTime(){
+    var min = Math.floor(this.playMs / 60000);
+    var sec = Math.floor(this.playMs % 60000 / 1000);
+    var ms = this.playMs % 1000;
+    return{min: min, sec: sec, ms: ms};
+  }
+  get playTimeStr(){
+    var p = this.playTime;
+    if(p.sec < 10) return p.min + ":0" + p.sec; 
+    else return p.min + ":" + p.sec; 
   }
 }

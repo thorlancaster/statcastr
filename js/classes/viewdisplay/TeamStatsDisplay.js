@@ -8,7 +8,7 @@ class TeamStatsDisplay extends TabbedViewDisplay{
 
         t.mainTable = new TeamStatsDisplayTable(t.team.town);
         t.mainTable.setColumns([
-            ["Player", "numName"],
+            ["Player", "numNameStr"],
             ["PTS", "points"],
             ["FLS", "fouls"],
             ["FG", "fgStr"],
@@ -20,8 +20,7 @@ class TeamStatsDisplay extends TabbedViewDisplay{
             ["ST", "steals"],
             ["MIN", "playTimeStr"]
         ]);
-        t.mainTable.setLabel("Full Box Score");
-        
+        t.mainTable.label.setText(t.team.town + " Full Box Score");
         t.appendChild(t.mainTable);
     }
     
@@ -30,6 +29,7 @@ class TeamStatsDisplay extends TabbedViewDisplay{
         t.selector.setMaxVisible(t.model.clock.period + 1);
         t.mainTable.setStateFromModel(t.team);
     }
+
     onSelect(txt){
         var t = this;
         var ls = "";

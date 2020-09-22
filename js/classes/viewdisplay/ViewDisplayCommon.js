@@ -110,13 +110,9 @@ class PBPDisplayTable extends DisplayTable{
 class TeamStatsDisplayTable extends DisplayTable{
   constructor(){
     super("", ["--"]);
-    this.setLabel(" UNNAMED TeamStatsDisplayTable")
     this.stats = []; // List of stats that this table tracks
   }
 
-  setLabel(label){
-    this.label.setText(label);
-  }
   /**
    * Set the columns of this table
    * @param {Array} cols Array of Arrays of (Column name, Player stat)
@@ -133,7 +129,18 @@ class TeamStatsDisplayTable extends DisplayTable{
   }
 
   setStateFromModel(team){
-
+    var t = this;
+    // console.log(team);
+    var row = 0;
+    for(var x in team.players){
+      var ply = team.players[x];
+      // console.log(ply);
+      for(var y = 0; y < t.stats.length; y++){
+        t.table.setCell(y, row, ply[t.stats[y]]);
+      }
+      // t.table.setCell(0, row, ply.id);
+      row++;
+    }
   }
 }
 
@@ -179,32 +186,3 @@ class TabbedViewDisplay extends UIPanel{
     console.log(txt);
   }
 }
-
-
-/*
-TEMPLATE for new ViewDisplays
-
-class xxxDisplay extends UIPanel{
-  constructor(model){
-      super();
-      var t = this;
-      this.model = model;
-      t.addClass("xxxDisplay").addClass("viewDisplay");
-      t.setStyle("flexDirection", "column");
-      t.selector = new PeriodTabSelector("All");
-      t.selector.addSelectionListener(t.onSelect.bind(t));
-
-      t.appendChild(t.selector);
-      // Append tables and stuff here
-  }
-  
-  update(){
-      var t = this;
-      t.selector.setMaxVisible(t.model.clock.period + 1);
-      // SetStateFromModel for the tables
-  }
-  onSelect(txt){
-      console.log(txt);
-  }
-}
-*/

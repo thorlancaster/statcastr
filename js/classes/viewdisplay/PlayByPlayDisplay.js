@@ -33,6 +33,6 @@ class PlayByPlayDisplay extends TabbedViewDisplay{
     tbl.label.setText(ls + " Plays");
     tbl.limit = txt=="*"?t.numRecent:0;
     tbl.filter = txt=="*"?null:{period: parseInt(txt)};
-    t.update()
+    t.update();
   }
 }

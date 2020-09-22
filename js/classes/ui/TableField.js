@@ -13,7 +13,7 @@ class TableField extends UIPanel{
     /**
      * Sets the columns of this table by name.
      * NOTE: This also clears the contents of the table,
-     * and anything it the <colgroup>/
+     * and anything it the <colgroup>
      * @param {Array} columns array of column names
      */
     setColumns(columns){
