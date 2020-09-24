@@ -10,6 +10,7 @@ class ScoreDisplayHeader extends UIPanel{
   constructor(){
     super();
     var t = this;
+    t.addClass("scoreDisplayHeader");
     t.setStyle("height", "5em").setStyle("background", "var(--main-bg2)");
     t.home = new ScoreDisplayHeaderTeam("TEAM", "")
     .setStyle("width", "8em").setElasticity(0);

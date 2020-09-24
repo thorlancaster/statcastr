@@ -25,6 +25,11 @@ body{
   overflow: hidden;
 }
 
+.scoreDisplayHeader{
+  top: 0px;
+  position: sticky;
+}
+
 .viewContainer{
   width: 100%;
   /* height: 100%; */
