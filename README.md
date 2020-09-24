@@ -4,6 +4,13 @@ A web application to display live stats feeds from a variety of sports.
 ## Usage
 Clone the git repository and load index.html in your browser.
 
+## Features
+- Scoreboard view that looks like a standard scoreboard, with a play-by-play displaying stats of players currently on the court
+- Team- and Opponent- stats view that displays the box score (and more to come)
+- Play-By-Play view that displays each play, along with the time and score when the play happened
+- Minimal CPU and network usage (for the minified version)
+  - Unlike competing solutions, Statcastr DOESN'T reload most of the page / download a megabyte of JSON when plays happen.
+
 ## Design principles
 This project (when finished) is intended as an alternative to StatBroadcast.
 It is built using inheritance and other good OO principles and is heavily based
