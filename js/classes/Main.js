@@ -33,6 +33,7 @@ class Main{
     t.generateView("scoreboard", new ScoreboardView(t.model));
     t.generateView("playByPlay", new PlayByPlayView(t.model));
     t.generateView("teamStats", new TeamStatsView(t.model, true));
+    t.generateView("opponentStats", new TeamStatsView(t.model, false));
     t.setView("scoreboard");
     t.update();
 
