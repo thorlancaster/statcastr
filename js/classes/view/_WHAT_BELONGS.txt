@@ -1,0 +1,4 @@
+This folder contains classes that:
+    1: Extend the View class
+    2: Contain a Header and a ViewDisplay
+    3: Don't do anything else

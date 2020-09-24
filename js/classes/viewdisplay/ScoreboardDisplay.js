@@ -1,6 +1,6 @@
-// This file contains the classes that comprise the Scoreboard VIEW.
-// These classes are not a model and not a controller. This is just a VIEW.
-
+/**
+ * Displays a full-size scoreboard
+ */
 class ScoreboardDisplay extends UIPanel{
   constructor(){
     super();
@@ -22,6 +22,9 @@ class ScoreboardDisplay extends UIPanel{
   }
 }
 
+/**
+ * Displays the "Player-Fouls-Points" on each side of the main scoreboard
+ */
 class ScoreboardPFP extends UIPanel{
   constructor(){
     super();
@@ -40,6 +43,9 @@ class ScoreboardPFP extends UIPanel{
   }
 }
 
+/**
+ * Displays the labels at the top of a ScoreboardPFP
+ */
 class ScoreboardPFPHeader extends UIPanel{
   constructor(){
     super();
@@ -54,6 +60,9 @@ class ScoreboardPFPHeader extends UIPanel{
   }
 }
 
+/**
+ * Displays a player in a ScoreboardPFP
+ */
 class ScoreboardPFPItem extends UIPanel{
   constructor(){
     super();
@@ -78,6 +87,10 @@ class ScoreboardPFPItem extends UIPanel{
   }
 }
 
+/**
+ * Displays the period number and a label called period.
+ * TODO add possession arrow?
+ */
 class ScoreboardPeriodArea extends UIPanel{
   constructor(){
     super();
@@ -93,6 +106,9 @@ class ScoreboardPeriodArea extends UIPanel{
   }
 }
 
+/**
+ * Displays the main body of the scoreboard, excluding Player-Fouls-Points
+ */
 class ScoreboardMain extends UIPanel{
   constructor(){
     super();

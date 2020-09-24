@@ -1,0 +1,7 @@
+This folder contains classes that:
+    1: Extend UIPanel
+    2: Don't dela with RAW HTML ELEMENTS
+    3: Can contain sub-objects
+
+In general, the classes in this folder are used by classes
+in the ViewDisplay folder to show stuff on the screen.

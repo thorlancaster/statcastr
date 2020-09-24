@@ -1,0 +1,8 @@
+This folder contains classes that:
+    1: Handle the display of a View
+    2: Contain classes (UIPanels) that render the view to the user
+    3: Don't model any game data themselves
+
+
+Generally, there is a 1-1 correspondence between each View,
+and a ViewDisplay object

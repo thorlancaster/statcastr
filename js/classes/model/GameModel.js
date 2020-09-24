@@ -13,6 +13,9 @@ class GameClock{
   }
 }
 
+/**
+ * Class to hold a list of plays
+ */
 class PlayByPlay{
   constructor(){
     this.plays = [];
@@ -23,6 +26,11 @@ class PlayByPlay{
   removePlay(x){
     throw "Abstract Method";
   }
+  /**
+   * Get plays from this list
+   * @param {Integer} length Maximum number of plays to return
+   * @param {Object} args Filter that plays must match to be returned
+   */
   getPlays(length, args){
     var t = this;
     var rtn = [];
@@ -70,7 +78,11 @@ class PBPItem{
     this.rOppScore = 0; // These are to be computed by sport-specific Game Models
   }
   getTime(){
-    return {minutes: Math.floor(this.millis / 60000), seconds: Math.floor((this.millis / 1000) % 60), millis: this.millis % 1000};
+    return {
+      minutes: Math.floor(this.millis / 60000),
+      seconds: Math.floor((this.millis / 1000) % 60),
+      millis: this.millis % 1000
+    };
   }
   getTimeStr(){
     var t = this.getTime();
@@ -82,11 +94,17 @@ class PBPItem{
 class Team{
   constructor(info){
     var t = this;
-    t.town = info.town; // Ex. "Froid-Lake"
-    t.name = info.name; // Ex. "Redhawks"
-    t.abbr = info.abbr; // Ex. "FML";
-    t.image = info.image; // "Ex resources/mascots/froidmedicinelake.png"
+    if(info){
+      t.town = info.town; // Ex. "Froid-Lake"
+      t.name = info.name; // Ex. "Redhawks"
+      t.abbr = info.abbr; // Ex. "FML";
+      t.image = info.image; // "Ex resources/mascots/froidmedicinelake.png"
+    }
     t.players = []; // Associative array by player #
+    t.starters = []; // Array of player #s (ids) who are starters
+    t.lastPlayTime = {};
+    t.lastPlayTime.pd = 0;
+    t.lastPlayTime.ms = 0;
   }
   addPlayer(p){
     this.players[p.id] = p;
@@ -94,10 +112,22 @@ class Team{
   removePlayer(p){
     this.players[p.id] = null;
   }
-  reset(){
-    for(var p in this.players)
-      this.players[p].reset();
+  copyRoster(srcTeam){
+    assert(false, "Abstract Method");
   }
+  /**
+   * Reset the state of this team to the beginning of the game
+   */
+  reset(){
+    for(var p in this.players){
+      this.players[p].reset();
+      this.players[p].onCourt = this.starters.includes(this.players[p].id);
+    }
+  }
+  /**
+   * Return how many of a stat the team has
+   * @param {String} name name of stat to get
+   */
   getStat(name){
     var rtn = 0;
     for(var x in this.players){
@@ -114,6 +144,31 @@ class Player{
     t.id = number; // Per-team Player ID. (Jersey #);
     if(name == null) t.name = "[Player]"
     else t.name = name;
-    t.secondsPlayed = 0;
+    // Milliseconds of playing time
+    t.playMs = 0;
+    // Is the player currently playing
+    t.onCourt = true;
+  }
+
+  // When extending make sure to call super.reset();
+  reset(){
+    this.playMs = 0;
+  }
+
+  /**
+   * Return how long this player has been on the court, 
+   * EXCLUDING the time that has elapsed from the most recent
+   * play
+   */
+  getPlayTime(){
+    return {
+      minutes: Math.floor(this.playMs / 60000),
+      seconds: Math.floor((this.playMs / 1000) % 60),
+      millis: this.playMs % 1000
+    };
+  }
+  getPlayTimeStr(){
+    var t = this.getPlayTime();
+    return ""+t.minutes + (t.seconds < 10 ? ":0"+t.seconds : ":"+t.seconds);
   }
 }

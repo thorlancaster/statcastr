@@ -1,17 +1,15 @@
 
 class PlayByPlayDisplay extends TabbedViewDisplay{
-  constructor(model){
+  constructor(model, numRecent){
     super(model, "<u>R</u>ecent");
     var t = this;
     t.addClass("playByPlayDisplay");
-    t.numRecent = 32;
-    
+    t.numRecent = numRecent==null?32:numRecent;
     t.pdt = new PBPDisplayTable();
     t.pdt.setStyle("width", "100%");
     t.pdt.limit = t.numRecent;
     t.appendChild(t.pdt);
   }
-
 
   update(){
     super.update();

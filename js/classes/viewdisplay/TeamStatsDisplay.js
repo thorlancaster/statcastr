@@ -1,10 +1,15 @@
+/**
+ * Class that displays the Team Stats view
+ */
 class TeamStatsDisplay extends TabbedViewDisplay{
     constructor(model, whichTeam){
         super(model, "All");
         var t = this;
         t.addClass("teamStatsDisplay");
 
-        t.team = whichTeam ? model.team : model.opp;
+        t.team = whichTeam ? model.team : model.opp; // Main team object
+        t.whichTeam = whichTeam; // Boolean team
+        t.effTeam = t.team; // Effective Team (or sub-stats team)
 
         t.mainTable = new TeamStatsDisplayTable(t.team.town);
         t.mainTable.setColumns([
@@ -18,7 +23,9 @@ class TeamStatsDisplay extends TabbedViewDisplay{
             ["TO", "turnovers"],
             ["BL", "blocks"],
             ["ST", "steals"],
-            ["MIN", "playTimeStr"]
+            ["MIN", function(player){
+                return player.getPlayTimeStr();
+            }.bind(this)]
         ]);
         t.mainTable.label.setText(t.team.town + " Full Box Score");
         t.appendChild(t.mainTable);
@@ -27,7 +34,7 @@ class TeamStatsDisplay extends TabbedViewDisplay{
     update(){
         var t = this;
         t.selector.setMaxVisible(t.model.clock.period + 1);
-        t.mainTable.setStateFromModel(t.team);
+        t.mainTable.setStateFromModel(t.effTeam);
     }
 
     onSelect(txt){
@@ -42,6 +49,14 @@ class TeamStatsDisplay extends TabbedViewDisplay{
         }
         var tbl = t.mainTable;
         tbl.label.setText(t.team.town + " " + ls + " Box Score");
+        var txtInt = parseInt(txt);
+        if(isNaN(txtInt))
+            t.effTeam = t.team; // Entire game
+        else{
+            var tms = t.model.subStats[txtInt - 1]; // Single period
+            t.effTeam = t.whichTeam ? tms.team:tms.opp;
+        }
+            
         t.update();
     }
 }

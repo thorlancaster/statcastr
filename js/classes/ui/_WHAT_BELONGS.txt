@@ -1,0 +1,8 @@
+This folder contains classes that:
+    1: Extend UIPanel
+    2: Deal with RAW HTML ELEMENTS
+    3: Don't contain any sub-objects
+
+Classes that violate (2) AND (3) belong in Components.
+Classes that violate (3) but not (2) don't belong anywhere.
+    In this case, the HTML-managing code belongs in its own class.

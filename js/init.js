@@ -1,6 +1,5 @@
 // Loads the scripts required for the web app.
-// I know, PHP would be better here, but js is required to keep the
-// project organized without losing the ability to host statically.
+// TODO These scripts should be bundled and minified for production
 
 // Constants
 var DEBUG = true; // Comment out for production
@@ -13,25 +12,44 @@ class Initializer {
     // Load dependencies
     t.scriptLoader = new ScriptLoader(t.run.bind(t));
     var l = t.scriptLoader;
-    // Constant dependencies and Application Classes
+    // SCRIPTS
+    // Dependencies
     l.loadScript("js/libs/utils.js");
-    l.loadScript("js/classes/Main.js");
-    l.loadScript("js/classes/ui/UIPanel.js");
-    l.loadScript("js/classes/ui/TabSelector.js");
-    l.loadScript("js/classes/ui/TableField.js");
-    // MVC Model classes
+    // Model
     l.loadScript("js/classes/model/GameModel.js");
-    l.loadScript("js/classes/model/BasketballGameModel.js");
-    // MVC View / ViewDisplay Classes
-    l.loadScript("js/classes/viewdisplay/ViewDisplayCommon.js");
-    l.loadScript("js/classes/viewdisplay/ScoreboardDisplay.js");
-    l.loadScript("js/classes/viewdisplay/PlayByPlayDisplay.js");
-    l.loadScript("js/classes/viewdisplay/TeamStatsDisplay.js");
+    l.loadScript("js/classes/model/basketball/BasketballGameModel.js");
+    l.loadScript("js/classes/model/basketball/BasketballPBP.js");
+    l.loadScript("js/classes/model/basketball/BasketballPlayer.js");
+    l.loadScript("js/classes/model/basketball/BasketballPlayType.js");
+    l.loadScript("js/classes/model/basketball/BasketballSubStats.js");
+    l.loadScript("js/classes/model/basketball/BasketballTeam.js");
+    // UI
+    l.loadScript("js/classes/ui/UIPanel.js");
+    l.loadScript("js/classes/ui/TextField.js");
+    l.loadScript("js/classes/ui/ImageField.js");
+    l.loadScript("js/classes/ui/NumberField.js");
+    l.loadScript("js/classes/ui/TableField.js");
+    l.loadScript("js/classes/ui/TabSelector.js");
+    // Components
+    l.loadScript("js/classes/components/DisplayTable.js");
+    l.loadScript("js/classes/components/PBPDisplayTable.js");
+    l.loadScript("js/classes/components/PeriodTabSelector.js");
+    l.loadScript("js/classes/components/ScoreDisplayHeader.js");
+    l.loadScript("js/classes/components/TabbedViewDisplay.js");
+    l.loadScript("js/classes/components/TeamStatsDisplayTable.js");
+    // View
     l.loadScript("js/classes/view/View.js");
-    l.loadScript("js/classes/view/TeamStatsView.js");
     l.loadScript("js/classes/view/ScoreboardView.js");
+    l.loadScript("js/classes/view/TeamStatsView.js");
     l.loadScript("js/classes/view/PlayByPlayView.js");
-    // Styles
+    // ViewDisplay
+    l.loadScript("js/classes/viewdisplay/PlayByPlayDisplay.js");
+    l.loadScript("js/classes/viewdisplay/ScoreboardDisplay.js");
+    l.loadScript("js/classes/viewdisplay/TeamStatsDisplay.js");
+    // Main
+    l.loadScript("js/classes/Main.js");
+
+    // STYLES
     t.loadStyle("css/main.css");
 
     // Start application when loaded
@@ -42,11 +60,6 @@ class Initializer {
     window.addEventListener("blur", function(e){if(MAIN.onBlur) MAIN.onBlur(e);});
     window.addEventListener("keydown", function(e){if(MAIN.keyDown) MAIN.keyDown(e);});
     window.addEventListener("keyup", function(e){if(MAIN.keyUp) MAIN.keyUp(e);});
-
-  }
-  animate(){
-    // MAIN.animate();
-    // requestAnimationFrame(initializer.animate);
   }
 
   run(){
@@ -54,7 +67,6 @@ class Initializer {
     try{
       window.MAIN = new Main();
       // MAIN.init(APP_ROOT);
-      t.animate(t);
       t.setLoader(false);
     }
     catch(e){
