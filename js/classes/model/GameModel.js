@@ -99,6 +99,11 @@ class Team{
       t.name = info.name; // Ex. "Redhawks"
       t.abbr = info.abbr; // Ex. "FML";
       t.image = info.image; // "Ex resources/mascots/froidmedicinelake.png"
+    } else {
+      t.town = "--";
+      t.name = "--";
+      t.abbr = "--";
+      t.image = "";
     }
     t.players = []; // Associative array by player #
     t.starters = []; // Array of player #s (ids) who are starters
@@ -134,6 +139,61 @@ class Team{
       rtn += this.players[x][name];
     }
     return rtn;
+  }
+  // Format: town name abbr image players[name BYTE(starting number)]
+  toByteArray(){
+    var t = this;
+    var len = t.town.length + t.name.length + t.abbr.length + t.image.length + 8;
+    var p = t.players;
+    for(var x in p)
+      len += (2 + p[x].name.length + 1);
+    var ptr = 0;
+    var rtn = new Uint8Array(len);
+    ptr = PUTSTR(rtn, t.town, ptr);
+    ptr = PUTSTR(rtn, t.name, ptr);
+    ptr = PUTSTR(rtn, t.abbr, ptr);
+    ptr = PUTSTR(rtn, t.image, ptr);
+    for(var x in p){
+      ptr = PUTSTR(rtn, p[x].name, ptr);
+      var isStart = t.starters.includes(p[x].id);
+      var ifo = (p[x].id=="00"?127:parseInt(p[x].id)) + (isStart?128:0);
+      rtn[ptr++] = ifo;
+    }
+    return rtn;
+  }
+  fromByteArray(arr){
+    var ptr = 0, t = this, p = t.players;
+    t.town = GETSTR(arr, ptr);
+    ptr += (2 + t.town.length);
+    t.name = GETSTR(arr, ptr);
+    ptr += (2 + t.name.length);
+    t.abbr = GETSTR(arr, ptr);
+    ptr += (2 + t.abbr.length);
+    t.image = GETSTR(arr, ptr);
+    ptr += (2 + t.image.length);
+
+    var pids = [];
+    t.starters = [];
+    while(ptr < arr.length){
+      var name = GETSTR(arr, ptr);
+      if(name.length == 0)
+        debugger;
+      ptr += (2 + name.length);
+      var b3 = arr[ptr++];
+      var pid = b3 & 127;
+      pid = pid==127?"00":""+pid;
+      var start = (b3 & 128) > 0 ? true:false;
+      pids[pid] = true;
+      var ply = t.players[pid];
+      if(ply == null){
+        ply = new t.PLAYER_CLASS();
+        t.players[pid] = ply;
+      }
+      ply.name = name;
+      ply.id = pid;
+      if(start)
+        t.starters.push(pid);
+    }
   }
 }
 

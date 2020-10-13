@@ -16,6 +16,47 @@ function CLEAR(el){
   }
 }
 
+function PUTSTR(arr, str, ptr){
+  arr[ptr++] = (str.length >> 8);
+  arr[ptr++] = str.length;
+  for(var x = 0; x < str.length; x++){
+    arr[ptr++] = str.charCodeAt(x);
+  }
+  return ptr;
+}
+
+function GETSTR(arr, ptr){
+  var len = arr[ptr++] * 256 + arr[ptr++];
+  var rtn = "";
+  for(var x = 0; x < len; x++){
+    var val = arr[ptr++];
+    assert(val != 0, "Null Char in String");
+    rtn += String.fromCharCode(val);
+  }
+  return rtn;
+}
+
+/**
+ * Place a Uint8Array inside another, with markers for length
+ * @param {Uint8Array} arr destination array
+ * @param {Uint8Array} arrIn source array
+ * @param {Integer} ptr current pointer in source array
+ * @param {Integer} numBytes number of bytes used to specify destination array length
+ * @returns {Integer} new pointer in source array
+ */
+function PUTARR(arr, arrIn, ptr, numBytes){
+  if(numBytes >= 4)
+    arr[ptr++] = (arrIn.length >> 24);
+  if(numBytes >= 3)
+    arr[ptr++] = (arrIn.length >> 16);
+  arr[ptr++] = (arrIn.length >> 8);
+  arr[ptr++] = arrIn.length;
+  for(var x = 0; x < arrIn.length; x++){
+    arr[ptr++] = arrIn[x];
+  }
+  return ptr;
+}
+
 function assert(bool, str){
   if(str)
     if(!bool) throw "Assertion failed: " + str;

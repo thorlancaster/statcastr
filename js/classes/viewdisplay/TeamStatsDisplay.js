@@ -10,6 +10,7 @@ class TeamStatsDisplay extends TabbedViewDisplay{
         t.team = whichTeam ? model.team : model.opp; // Main team object
         t.whichTeam = whichTeam; // Boolean team
         t.effTeam = t.team; // Effective Team (or sub-stats team)
+        t.intervalDesc = "Full"
 
         t.mainTable = new TeamStatsDisplayTable(t.team.town);
         t.mainTable.setColumns([
@@ -27,12 +28,12 @@ class TeamStatsDisplay extends TabbedViewDisplay{
                 return player.getPlayTimeStr();
             }.bind(this)]
         ]);
-        t.mainTable.label.setText(t.team.town + " Full Box Score");
         t.appendChild(t.mainTable);
     }
     
     update(){
         var t = this;
+        t.mainTable.label.setText(t.team.town + " " + t.intervalDesc + " Box Score");
         t.selector.setMaxVisible(t.model.clock.period + 1);
         t.mainTable.setStateFromModel(t.effTeam);
     }
@@ -47,8 +48,7 @@ class TeamStatsDisplay extends TabbedViewDisplay{
         case "3": ls = "3rd Period"; break;
         default: ls = txt + "th Period";
         }
-        var tbl = t.mainTable;
-        tbl.label.setText(t.team.town + " " + ls + " Box Score");
+        t.intervalDesc = ls;        
         var txtInt = parseInt(txt);
         if(isNaN(txtInt))
             t.effTeam = t.team; // Entire game
@@ -56,7 +56,6 @@ class TeamStatsDisplay extends TabbedViewDisplay{
             var tms = t.model.subStats[txtInt - 1]; // Single period
             t.effTeam = t.whichTeam ? tms.team:tms.opp;
         }
-            
         t.update();
     }
 }

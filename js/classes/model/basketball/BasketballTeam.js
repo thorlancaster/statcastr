@@ -2,6 +2,7 @@
 class BasketballTeam extends Team{
     constructor(info){
       super(info);
+      this.PLAYER_CLASS = BasketballPlayer;
     }
     doPlayForTime(p){
       var t = this;
@@ -87,22 +88,22 @@ class BasketballTeam extends Team{
   }
   
   
-  class TestBasketballTeam extends BasketballTeam{
-    constructor(info){
-      super(info);
-      var t = this;
-      var p1 = new BasketballPlayer("1", "Isaac Johnson");
-      var p2 = new BasketballPlayer("3", "Javonne Nesbit");
-      var p3 = new BasketballPlayer("21", "Colt Miller");
-      var p4 = new BasketballPlayer("24", "Mason Dethman");
-      var p5 = new BasketballPlayer("44", "Bode Miller");
-      var p6 = new BasketballPlayer("45", "Brett Stentoft");
-      p6.onCourt = false;
-      t.addPlayer(p1);
-      t.addPlayer(p2);
-      t.addPlayer(p3);
-      t.addPlayer(p4);
-      t.addPlayer(p5);
-      t.addPlayer(p6);
-    }
-  }
+  // class TestBasketballTeam extends BasketballTeam{
+  //   constructor(info){
+  //     super(info);
+  //     var t = this;
+  //     var p1 = new BasketballPlayer("1", "Isaac Johnson");
+  //     var p2 = new BasketballPlayer("3", "Javonne Nesbit");
+  //     var p3 = new BasketballPlayer("21", "Colt Miller");
+  //     var p4 = new BasketballPlayer("24", "Mason Dethman");
+  //     var p5 = new BasketballPlayer("44", "Bode Miller");
+  //     var p6 = new BasketballPlayer("45", "Brett Stentoft");
+  //     p6.onCourt = false;
+  //     t.addPlayer(p1);
+  //     t.addPlayer(p2);
+  //     t.addPlayer(p3);
+  //     t.addPlayer(p4);
+  //     t.addPlayer(p5);
+  //     t.addPlayer(p6);
+  //   }
+  // }

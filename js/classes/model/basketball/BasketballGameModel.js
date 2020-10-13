@@ -3,47 +3,54 @@ class BasketballGameModel extends GameModel{
     super();
     var t = this;
     t.clock = new BasketballGameClock();
-    t.team = new TestBasketballTeam(
-      { town: "Froid Medicine-Lake", 
-        abbr: "FML",
-        name: "Redhawks",
-        image: "resources/mascots/froidmedicinelake.png"});
-    t.opp = new TestBasketballTeam(
-      { town: "Bozeman",
-        abbr: "STC",
-        name: "StatCastrs",
-        image: "resources/favicon/favicon-256.png"}
-    );
+    // t.team = new TestBasketballTeam(
+    //   { town: "Froid Medicine-Lake", 
+    //     abbr: "FML",
+    //     name: "Redhawks",
+    //     image: "resources/mascots/froidmedicinelake.png"});
+    // t.opp = new TestBasketballTeam(
+    //   { town: "Bozeman",
+    //     abbr: "STC",
+    //     name: "StatCastrs",
+    //     image: "resources/favicon/favicon-256.png"}
+    // );
+    t.team = new BasketballTeam();
+    t.opp = new BasketballTeam();
     t.pbp = new BasketballPlayByPlay();
     t.pbpCacheLength = 0; // For debugging assert() and sanity checks
+    t.initSubStats();
+  }
+  initSubStats(){
+    var t = this;
     t.subStats = [];
     for(var x = 0; x < 9; x++){
       t.subStats.push(new BasketballSubStats(t.team, t.opp, {period: x+1}));
     }
   }
-  dbgCreatePlayByPlay(){
-    var p = this.pbp;
-    this.team.starters = ["1", "3", "21", "24", "44"];
-    this.opp.starters = ["1", "3", "21", "24", "44"];
-    p.addPlay(new BasketballPBPItem(1, 480 * 1000, 1, null, BasketballPlayType.SET_CLOCK));
-    p.addPlay(new BasketballPBPItem(1, 477 * 1000, "1", true, BasketballPlayType.REB_UNK));
-    p.addPlay(new BasketballPBPItem(1, 475 * 1000, "3", true, BasketballPlayType.FOUL_P));
-    p.addPlay(new BasketballPBPItem(1, 470 * 1000, "21", true, BasketballPlayType.P2_MADE));
-    p.addPlay(new BasketballPBPItem(1, 465 * 1000, "24", true, BasketballPlayType.TURNOVER));
-    p.addPlay(new BasketballPBPItem(1, 460 * 1000, "44", true, BasketballPlayType.STEAL));
 
-    p.addPlay(new BasketballPBPItem(1, 400 * 1000, "44", true, BasketballPlayType.SUB_OUT));
-    p.addPlay(new BasketballPBPItem(1, 400 * 1000, "45", true, BasketballPlayType.SUB_IN));
+  // dbgCreatePlayByPlay(){
+  //   var p = this.pbp;
+  //   this.team.starters = ["1", "3", "21", "24", "44"];
+  //   this.opp.starters = ["1", "3", "21", "24", "44"];
+  //   p.addPlay(new BasketballPBPItem(1, 480 * 1000, 1, null, BasketballPlayType.SET_CLOCK));
+  //   p.addPlay(new BasketballPBPItem(1, 477 * 1000, "1", true, BasketballPlayType.REB_UNK));
+  //   p.addPlay(new BasketballPBPItem(1, 475 * 1000, "3", true, BasketballPlayType.FOUL_P));
+  //   p.addPlay(new BasketballPBPItem(1, 470 * 1000, "21", true, BasketballPlayType.P2_MADE));
+  //   p.addPlay(new BasketballPBPItem(1, 465 * 1000, "24", true, BasketballPlayType.TURNOVER));
+  //   p.addPlay(new BasketballPBPItem(1, 460 * 1000, "44", true, BasketballPlayType.STEAL));
 
-    p.addPlay(new BasketballPBPItem(1, 355 * 1000, "1", false, BasketballPlayType.P3_MADE));
-    p.addPlay(new BasketballPBPItem(1, 350 * 1000, "3", false, BasketballPlayType.FT_MADE));
-    p.addPlay(new BasketballPBPItem(1, 345 * 1000, "21", false, BasketballPlayType.ASSIST));
-    p.addPlay(new BasketballPBPItem(1, 340 * 1000, "24", false, BasketballPlayType.DUNK_MADE));
-    p.addPlay(new BasketballPBPItem(1, 335 * 1000, "44", false, BasketballPlayType.DUNK_MISS));
-    p.addPlay(new BasketballPBPItem(1, 0         , 1, null, BasketballPlayType.SET_CLOCK));
-    p.addPlay(new BasketballPBPItem(2, 480 * 1000, 2, null, BasketballPlayType.SET_CLOCK));
-    p.addPlay(new BasketballPBPItem(2, 475 * 1000, "3", true, BasketballPlayType.DUNK_MADE));
-  }
+  //   p.addPlay(new BasketballPBPItem(1, 400 * 1000, "44", true, BasketballPlayType.SUB_OUT));
+  //   p.addPlay(new BasketballPBPItem(1, 400 * 1000, "45", true, BasketballPlayType.SUB_IN));
+
+  //   p.addPlay(new BasketballPBPItem(1, 355 * 1000, "1", false, BasketballPlayType.P3_MADE));
+  //   p.addPlay(new BasketballPBPItem(1, 350 * 1000, "3", false, BasketballPlayType.FT_MADE));
+  //   p.addPlay(new BasketballPBPItem(1, 345 * 1000, "21", false, BasketballPlayType.ASSIST));
+  //   p.addPlay(new BasketballPBPItem(1, 340 * 1000, "24", false, BasketballPlayType.DUNK_MADE));
+  //   p.addPlay(new BasketballPBPItem(1, 335 * 1000, "44", false, BasketballPlayType.DUNK_MISS));
+  //   p.addPlay(new BasketballPBPItem(1, 0         , 1, null, BasketballPlayType.SET_CLOCK));
+  //   p.addPlay(new BasketballPBPItem(2, 480 * 1000, 2, null, BasketballPlayType.SET_CLOCK));
+  //   p.addPlay(new BasketballPBPItem(2, 475 * 1000, "3", true, BasketballPlayType.DUNK_MADE));
+  // }
   /**
    * Get human-readable information on a Play-by-Play
    * @param {*} pbp PBPItem object
@@ -112,6 +119,7 @@ class BasketballGameModel extends GameModel{
    * Use updateFromPBP() instead if possible
    */
   reloadFromPBP(){
+    console.warn("PBP cache blown. Must reload " + this.pbp.plays.length);
     var t = this;
     t.team.reset();
     t.opp.reset();
@@ -124,12 +132,26 @@ class BasketballGameModel extends GameModel{
   }
 
   /**
+   * Reloads all roster-related data.
+   * Call this function after the roster changes
+   * and BEFORE calling reloadFromPBP();
+   */
+  reloadRosters(){
+    this.initSubStats();
+  }
+
+  /**
    * Loads the last play in pbp into the cache
-   * @param {Integer} playNum Overrides "last play in pbp"
+   * @param {Integer} playNum Overrides "last play in pbp". If negative, is relative to length.
    */
   updateFromPBP(playNum){
     var t = this;
-    var x = playNum != null ? playNum : t.pbp.plays.length-1;
+    var x = playNum;
+    if(playNum == null){
+      x = t.pbp.plays.length-1;
+    } else if(playNum <= 0){
+      x = t.pbp.plays.length-1+playNum;
+    }
     t.pbpCacheLength++;
     if(playNum == null){
       assert(t.pbpCacheLength == t.pbp.length, "PBP cache length mismatch");
@@ -166,6 +188,18 @@ class BasketballGameModel extends GameModel{
       }
     }
   }
+
+  /* Stuff for Synchronizr compatibliity */
+  getStaticData(){
+    return [this.team, this.opp];
+  }
+  getDynamicData(){
+    var t = this;
+    return [this.clock];
+  }
+  getEventData(){
+    return this.pbp.plays;
+  }
 }
 
 class BasketballGameClock extends GameClock{
@@ -180,5 +214,19 @@ class BasketballGameClock extends GameClock{
       minutes: Math.floor(ml/60000),
       seconds: Math.floor(ml/1000) % 60,
       millis: ml%1000};
+  }
+  // Format: period ms ms ms
+  toByteArray(){
+    var ms = this.millisLeft;
+    var rtn = new Uint8Array(4);
+    rtn[0] = this.period;
+    rtn[1] = ms >> 16;
+    rtn[2] = ms >> 8;
+    rtn[3] = ms;
+    return rtn;
+  }
+  fromByteArray(arr){
+    this.period = arr[0];
+    this.millisLeft = arr[1] * 65536 + arr[2] * 256 + arr[3];
   }
 }

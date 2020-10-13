@@ -15,14 +15,6 @@ class Initializer {
     // SCRIPTS
     // Dependencies
     l.loadScript("js/libs/utils.js");
-    // Model
-    l.loadScript("js/classes/model/GameModel.js");
-    l.loadScript("js/classes/model/basketball/BasketballGameModel.js");
-    l.loadScript("js/classes/model/basketball/BasketballPBP.js");
-    l.loadScript("js/classes/model/basketball/BasketballPlayer.js");
-    l.loadScript("js/classes/model/basketball/BasketballPlayType.js");
-    l.loadScript("js/classes/model/basketball/BasketballSubStats.js");
-    l.loadScript("js/classes/model/basketball/BasketballTeam.js");
     // UI
     l.loadScript("js/classes/ui/UIPanel.js");
     l.loadScript("js/classes/ui/TextField.js");
@@ -30,24 +22,13 @@ class Initializer {
     l.loadScript("js/classes/ui/NumberField.js");
     l.loadScript("js/classes/ui/TableField.js");
     l.loadScript("js/classes/ui/TabSelector.js");
-    // Components
-    l.loadScript("js/classes/components/DisplayTable.js");
-    l.loadScript("js/classes/components/PBPDisplayTable.js");
-    l.loadScript("js/classes/components/PeriodTabSelector.js");
-    l.loadScript("js/classes/components/ScoreDisplayHeader.js");
-    l.loadScript("js/classes/components/TabbedViewDisplay.js");
-    l.loadScript("js/classes/components/TeamStatsDisplayTable.js");
-    // View
-    l.loadScript("js/classes/view/View.js");
-    l.loadScript("js/classes/view/ScoreboardView.js");
-    l.loadScript("js/classes/view/TeamStatsView.js");
-    l.loadScript("js/classes/view/PlayByPlayView.js");
-    // ViewDisplay
-    l.loadScript("js/classes/viewdisplay/PlayByPlayDisplay.js");
-    l.loadScript("js/classes/viewdisplay/ScoreboardDisplay.js");
-    l.loadScript("js/classes/viewdisplay/TeamStatsDisplay.js");
     // Main
-    l.loadScript("js/classes/Main.js");
+    l.loadScript("js/classes/model/GameModel.js");
+    l.loadScript("js/classes/model/basketball/BasketballGameModel.js");
+    l.loadScript("js/classes/model/basketball/BasketballPlayType.js");
+    l.loadScript("js/classes/model/basketball/BasketballPBP.js");
+    l.loadScript("js/classes/synchronizr/SynchronizrMain.js");
+    l.loadScript("js/classes/synchronizr/Synchronizr.js");
 
     // STYLES
     t.loadStyle("css/main.css");
@@ -65,7 +46,7 @@ class Initializer {
   run(){
     var t = this;
     try{
-      window.MAIN = new Main();
+      window.MAIN = new SynchronizrMain();
       // MAIN.init(APP_ROOT);
       t.setLoader(false);
     }
