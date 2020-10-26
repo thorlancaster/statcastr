@@ -38,6 +38,7 @@ class NumberField extends UIPanel{
         case "X": rtn = 0; break; // Number or '0'
         case "x": rtn = -1; break; // Number or ' ' if leading zero
         case "n": rtn = -2; break; // Number or ' ' if zero
+        case "1": rtn = -3; break; // Number, omit if leading zero
         default: rtn = fChar; break;
       }
       if(typeof rtn == "number"){
@@ -51,6 +52,7 @@ class NumberField extends UIPanel{
           case "X":
             return Math.floor(t.value / Math.pow(10, apos) % 10);
           case "x":
+          case "1":
             var val = t.value / Math.pow(10, apos);
             if(val >= 1)
               return Math.floor(val % 10);
@@ -93,7 +95,21 @@ class NumberField extends UIPanel{
       } else {
         ctx.clearRect(0, 0, cw, ch);
       }
-      var numDigits = t.format.length;
+      // -------- Digit Length Calculation
+      var numDigits = t.format.length; // # of digits in display
+      var numGiven = Math.ceil(Math.log(t.value + 0.1) / Math.log(10)); // # of digits in value
+      var numLeading = 0; // # of digits that can be tacked on to display if required
+      for(var x = 0; x < t.format.length; x++){
+        if(t.format.charAt(x) == '1'){
+          numLeading++; numDigits--;
+        } else break;
+      }
+      // Tack on leading digits if necessary
+      if(numGiven > numDigits){
+        numDigits = Math.min(numGiven, numDigits + numLeading);
+      }
+
+      // -------- Layout Calculation
       var xStart = cw * 0.1, xEnd = cw * (1-0.1), yStart = ch * 0.1, yEnd = ch*(1-0.1);
       var acw = xEnd - xStart, ach = yEnd - yStart;
       var space = 0.67; // How many digit heights to advance each number
@@ -106,6 +122,7 @@ class NumberField extends UIPanel{
         fullWidth = acw;
         numStartY += (1-squish)*ach/2;
       }
+      // --------Drawing
       // +1 to offset Math.floor() later
       var numStartX = xStart + (acw-fullWidth)/2 + 1; // X-coordinate where numbers start
       for(var x = 0; x < numDigits; x++){

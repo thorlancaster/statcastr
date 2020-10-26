@@ -3,6 +3,9 @@ class Main{
     // Like public static void main(String[] args)
     constructor(){
         var t = this;
+        window.MAIN = this;
+        t.MOBILE_WIDTH = 780; // If narrower, mobile layout is used
+        t.mobile = (window.innerWidth < t.MOBILE_WIDTH);
         t.sc = new StatcastrApp(DGE(APP_ROOT));
         t.syn = new Synchronizr();
         t.syn.setLocalData(t.sc.getStaticData(), t.sc.getDynamicData(), t.sc.getEventData());
@@ -53,7 +56,9 @@ class Main{
     }
 
     onResize(){
-        this.sc.onResize();
+        var t = this;
+        t.mobile = (window.innerWidth < t.MOBILE_WIDTH);
+        t.sc.onResize();
     }
 
 

@@ -27,4 +27,9 @@ class DisplayTable extends UIPanel{
     setStateFromModel(m){
       assert(false, "Abstract Method");
     }
+
+    resize(){
+      super.resize();
+      this.label.setStyle("justifyContent", MAIN.mobile?"center":"left");
+    }
   }

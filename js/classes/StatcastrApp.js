@@ -4,7 +4,7 @@ const Constants = {
     {scoreboardHomeScore: {litColor: "#F01"}, scoreboardGuestScore: {litColor: "#F01"}, scoreboardPFPPlayerNum: {litColor: "#F01"},
     scoreboardHomeFouls: {litColor: "#F01"}, scoreboardGuestFouls: {litColor: "#F01"}, scoreboardClock: {litColor: "#FD0"},
     scoreboardPeriod: {litColor: "#FD0"}}
-  ]
+  ],
 }
 
 class StatcastrApp{
@@ -12,6 +12,7 @@ class StatcastrApp{
     var t = this;
     assert(appRootEl != null, "App Root Element is required")
     t.appRoot = appRootEl;
+    t.appRoot.classList.add("appRoot");
     t.views = [];
     t.NULL_VIEW = new NullView();
 
@@ -35,7 +36,8 @@ class StatcastrApp{
     t.generateView("playByPlay", new PlayByPlayView(t.model));
     t.generateView("teamStats", new TeamStatsView(t.model, true));
     t.generateView("opponentStats", new TeamStatsView(t.model, false));
-    t.setView("scoreboard");
+    t.generateView("admin", new AdminView(t.model));
+    t.setView("admin");
     t.update();
 
     // Allow the page to render before finishing
@@ -88,6 +90,7 @@ class StatcastrApp{
     vs.addTab("S<u>C</u>ORING", "scoring");
     vs.addTab("SHOOTIN<u>G</u>", "shooting");
     vs.addTab("<u>H</u>ELP", "help", true);
+    vs.addTab("<u>A</u>DMIN", "admin");
     return vs;
   }
 
@@ -143,8 +146,14 @@ class StatcastrApp{
   }
 
   onResize(){
-    this.getSelectedView().resize();
-    this.viewSelector.resize();
+    var t = this;
+    if(MAIN.mobile)
+      t.appRoot.classList.add("mobile");
+    else
+     t.appRoot.classList.remove("mobile");
+
+    t.getSelectedView().resize();
+    t.viewSelector.resize();
   }
 
   /* Stuff for Synchronizr compatibliity */

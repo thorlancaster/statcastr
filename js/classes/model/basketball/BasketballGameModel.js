@@ -119,7 +119,7 @@ class BasketballGameModel extends GameModel{
    * Use updateFromPBP() instead if possible
    */
   reloadFromPBP(){
-    console.warn("PBP cache blown. Must reload " + this.pbp.plays.length);
+    // console.warn("PBP cache blown. Must reload " + this.pbp.plays.length);
     var t = this;
     t.team.reset();
     t.opp.reset();

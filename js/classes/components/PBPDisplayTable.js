@@ -4,9 +4,9 @@
  */
  
 class PBPDisplayTable extends DisplayTable{
-  constructor(){
+  constructor(limit){
     super("Most Recent Plays", ["Team", "Time", "Score", "Play"]);
-    this.limit = 5;
+    this.limit = limit ? limit : 5;
     this.filter = null;
   }
   setStateFromModel(m){

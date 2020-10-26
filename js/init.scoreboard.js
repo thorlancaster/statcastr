@@ -35,6 +35,7 @@ class Initializer {
     l.loadScript("js/classes/components/PBPDisplayTable.js");
     l.loadScript("js/classes/components/PeriodTabSelector.js");
     l.loadScript("js/classes/components/ScoreDisplayHeader.js");
+    l.loadScript("js/classes/components/ViewDisplay.js");
     l.loadScript("js/classes/components/TabbedViewDisplay.js");
     l.loadScript("js/classes/components/TeamStatsDisplayTable.js");
     // View
@@ -42,10 +43,12 @@ class Initializer {
     l.loadScript("js/classes/view/ScoreboardView.js");
     l.loadScript("js/classes/view/TeamStatsView.js");
     l.loadScript("js/classes/view/PlayByPlayView.js");
+    l.loadScript("js/classes/view/AdminView.js");
     // ViewDisplay
     l.loadScript("js/classes/viewdisplay/PlayByPlayDisplay.js");
     l.loadScript("js/classes/viewdisplay/ScoreboardDisplay.js");
     l.loadScript("js/classes/viewdisplay/TeamStatsDisplay.js");
+    l.loadScript("js/classes/viewdisplay/AdminViewDisplay.js");
     // Synchronizr
     l.loadScript("js/classes/synchronizr/Synchronizr.js")
     // Main App

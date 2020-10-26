@@ -1,12 +1,12 @@
 /**
  * UI Component to display content with a TabSelector above it
  */
-class TabbedViewDisplay extends UIPanel{
+class TabbedViewDisplay extends ViewDisplay{
     constructor(model, firstTabName){
       super();
       var t = this;
       this.model = model;
-      t.addClass("TabbedViewDisplay").addClass("viewDisplay");
+      t.addClass("tabbedViewDisplay");
       t.setStyle("flexDirection", "column");
       t.selector = new PeriodTabSelector(firstTabName);
       t.selector.addSelectionListener(t.onSelect.bind(t));

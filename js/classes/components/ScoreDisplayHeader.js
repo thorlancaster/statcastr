@@ -13,12 +13,12 @@ class ScoreDisplayHeader extends UIPanel{
     t.addClass("scoreDisplayHeader");
     t.setStyle("height", "5em").setStyle("background", "var(--main-bg2)");
     t.home = new ScoreDisplayHeaderTeam("TEAM", "")
-    .setStyle("width", "8em").setElasticity(0);
+    .setStyle("width", "8em").setElasticity(0.001);
     t.guest = new ScoreDisplayHeaderTeam("OPPONENT", "")
-    .setStyle("width", "8em").setElasticity(0);
-    t.homeScore = new NumberField("xxX").setStyle("width", "9em").setElasticity(0.001).addClass("scoreboardHomeScore");
-    t.guestScore = new NumberField("xxX").setStyle("width", "9em").setElasticity(0.001).addClass("scoreboardGuestScore");
-    t.clock = new NumberField("PX  nX:XX").setStyle("width", "24em").setElasticity(0.001);
+    .setStyle("width", "8em").setElasticity(0.001);
+    t.homeScore = new NumberField("1xX").setStyle("width", "9em").setElasticity(0.001).addClass("scoreboardHomeScore");
+    t.guestScore = new NumberField("1xX").setStyle("width", "9em").setElasticity(0.001).addClass("scoreboardGuestScore");
+    t.clock = new NumberField("PX nX:XX").setStyle("width", "24em").setElasticity(0.001);
     t.appendChild(t.home);
     t.appendChild(t.homeScore);
     t.appendChild(new UIPanel());
@@ -29,17 +29,31 @@ class ScoreDisplayHeader extends UIPanel{
   }
   calcSize(){
     super.calcSize();
+    this.width = this.element.innerWidth;
+  }
+  applySize(){
+    super.applySize();
+    this.updateNameText();
+    this.setStyle("height", MAIN.mobile?"3.5em":"5em");
   }
   setStateFromModel(m){
     var t = this;
     var gTime = m.clock.getTime();
+    t.teamName = m.team.name;
+    t.teamAbbr = m.team.abbr;
+    t.oppName = m.opp.name;
+    t.oppAbbr = m.opp.abbr;
     t.home.image.setSrc(m.team.image);
-    t.home.name.setText(m.team.name);
     t.guest.image.setSrc(m.opp.image);
-    t.guest.name.setText(m.opp.name);
+    t.updateNameText();
     t.clock.setValue(m.clock.period * 10000 + gTime.minutes * 100 + gTime.seconds);
     t.homeScore.setValue(m.team.getStat("points"));
     t.guestScore.setValue(m.opp.getStat("points"));
+  }
+  updateNameText(){
+    var t = this;
+    t.guest.name.setText(MAIN.mobile ? t.oppAbbr : t.oppName);
+    t.home.name.setText(MAIN.mobile ? t.teamAbbr : t.teamName);
   }
 }
 class ScoreDisplayHeaderTeam extends UIPanel{

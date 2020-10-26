@@ -17,6 +17,15 @@ body{
   user-select: none;
 }
 
+.appRoot{
+  --view-display-width: 88%;
+}
+.appRoot.mobile{
+  --view-display-width: 100%;
+  --view-display-width: calc(100% - 2px);
+  font-size: 1.2em;
+}
+
 .uiPanel{
   display: flex;
   flex-grow: 1;
@@ -42,7 +51,7 @@ body{
   margin: 2em auto;
   background: var(--gradient-bg);
   border: 1px solid black;
-  width: 85%;
+  width: var(--view-display-width);
 }
 
 /* A view display that takes up the entire screen. Ex. Scoreboards */
