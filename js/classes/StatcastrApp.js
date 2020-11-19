@@ -17,14 +17,13 @@ class StatcastrApp{
     t.NULL_VIEW = new NullView();
 
     t.viewSelector = t.createViewSelector();
-    t.viewSelector.addSelectionListener(function(sel){ t.onViewSelected(sel); });
+    t.viewSelector.addSelectionListener(function(sel){t.onViewSelected(sel)});
     t.appRoot.appendChild(t.viewSelector.element);
 
     t.viewContainer = DCE("div","viewContainer");
     t.viewContainer.style.flexShrink = "1";
     t.viewContainer.style.flexGrow = "1";
     t.appRoot.appendChild(t.viewContainer);
-
 
     t.model = t.createSportModel("basketball");
     // t.model.dbgCreatePlayByPlay();
@@ -46,13 +45,16 @@ class StatcastrApp{
       t.viewSelector.setSelected(t.selectedView);
     }, 0);
 
-    // setTimeout(function(){
-    //   t.model.pbp.addPlay(new BasketballPBPItem(2, 470 * 1000, "24", true, BasketballPlayType.DUNK_MADE));
-    //   // TODO only calculate last play, NOT reload everything
-    //   // t.testPerfPBPReload();
-    //   t.model.reloadFromPBP();
-    //   t.update();
-    // }, 5000);
+    t.touchManager = new TouchManager(t.appRoot);
+    t.touchManager.addGestureListener(t.onGesture.bind(t));
+    t.touchManager.start();
+    window.TOUCH = t.touchManager;
+  }
+
+  onGesture(obj){
+    var v = this.getSelectedView();
+    if(v.onGesture)
+      v.onGesture(obj);
   }
 
   testPerfPBPReload(){

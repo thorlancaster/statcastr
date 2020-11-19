@@ -38,7 +38,7 @@ class NullView extends View{
   constructor(){
     super(null);
     this.viewDisp = new TextField()
-    .setHTML("This view is not available yet.<br/>We apologize for the inconvenience.")
+    .setHtml("This view is not available yet.<br/>We apologize for the inconvenience.")
     .setStyle("textAlign", "center").setStyle("height", "100%").setStyle("fontSize", "1.5em");
   }
 }

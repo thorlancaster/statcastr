@@ -77,7 +77,7 @@ class TabSelectorItem extends TextField{
     constructor(str, name, parent){
         super();
         var t = this;
-        t.setHTML(str).addClass("tabSelectorItem").setElasticity(0);
+        t.setHtml(str).addClass("tabSelectorItem").setElasticity(0);
         t.setStyles("paddingLeft", "paddingRight", "0.6em");
         t.setStyle("cursor", "pointer");
         t.parent = parent;

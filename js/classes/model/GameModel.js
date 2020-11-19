@@ -30,10 +30,12 @@ class PlayByPlay{
    * Get plays from this list
    * @param {Integer} length Maximum number of plays to return
    * @param {Object} args Filter that plays must match to be returned
+   * @returns an Array where the first item is an array of plays and the second item is an array of indices
    */
   getPlays(length, args){
     var t = this;
     var rtn = [];
+    var idxs = [];
     if(args != null){
       var keys = Object.keys(args);
       for(var x = t.plays.length - 1; x >= 0; x--){
@@ -44,21 +46,27 @@ class PlayByPlay{
             add = false; break;
           }
         }
-        if(add)
+        if(add){
           rtn.push(play);
+          idxs.push(x);
+        }
         if(length > 0 && rtn.length == length)
           break;
       }
-      return rtn;
+      return [rtn, idxs];
     }
     if(length > 0){
       for(var x = t.plays.length - 1; x >= 0; x--){
         rtn.push(t.plays[x]);
+        idxs.push(x);
         if(rtn.length == length)
-          return rtn;
+          return [rtn, idxs];
       }
     }
-    return t.plays;
+    idxs.length = t.plays.length;
+    for(var x = 0; x < idxs.length; x++)
+      idxs[x] = x;
+    return [t.plays, idxs];
   }
 }
 
@@ -68,14 +76,17 @@ class PBPItem{
   * @param millis Milliseconds since start of Period / until end of Period (Integer)
   * @param pid Player jersey # (String), or Period (Integer), when setting time
   * @param team true if Team, false if Opponent, null if neither
+  * @param linked true if this was created at the same time as the last one.
+  *     Used by Admin for keeping track of undo, not serialized or stored persistently
   */
-  constructor(period, millis, pid, team){
+  constructor(period, millis, pid, team, linked){
     this.period = period;
     this.millis = millis;
     this.pid = pid;
     this.team = team;
     this.rTeamScore = 0; // Running team and Opponent scores after this play
     this.rOppScore = 0; // These are to be computed by sport-specific Game Models
+    this.linked = (linked == true);
   }
   getTime(){
     return {

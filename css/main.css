@@ -5,16 +5,23 @@ html, body{
 
 body{
   background: #057;
+  --disabled-fg: #999;
   --main-bg1: #344;
   --main-bg2: #111;
+  --main-fg: #FFF;
+  --team-color1: #F00;
+  --opp-color1: #05F;
   --gradient-bg: linear-gradient(var(--main-bg1), var(--main-bg2));
   background: var(--gradient-bg);
   --sel-fg: #FF0;
   --sel-bg: #000;
+  --click-fg: #F60;
+  --click-bg: #000;
   color: #FFF;
   margin: 0;
   font-family: "Helvetica", "sans-serif";
   user-select: none;
+  touch-action: manipulation;
 }
 
 .appRoot{
@@ -23,7 +30,24 @@ body{
 .appRoot.mobile{
   --view-display-width: 100%;
   --view-display-width: calc(100% - 2px);
-  font-size: 1.2em;
+  font-size: 0.8em;
+}
+
+.toast{
+  position: fixed;
+  bottom: 2px;
+  left: 50%;
+  transform: translate(-50%);
+  background: var(--main-bg1);
+  border: 1px solid var(--main-bg2);
+  padding: 0.5em;
+  border-radius: 1em;
+  font-size: 1.3em;
+  pointer-events: none;
+  transition: opacity 0.5s;
+}
+.toast.ending{
+  opacity: 0;
 }
 
 .uiPanel{
@@ -74,6 +98,38 @@ body{
   font-weight: 700;
 }
 
+/* An element that holds a Button UI control */
+.buttonField{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.buttonField.fullSize button{
+  width: 100%;
+  height: 100%;
+}
+.buttonField button{
+  font-size: 1.1em;
+  border: 2px solid;
+  background: var(--main-bg1);
+  border-color: var(--main-bg2);
+  color: var(--main-fg);
+  transition: color 0.5s, background 0.5s;
+}
+.buttonField button.disabled{
+  color: var(--disabled-fg);
+}
+.buttonField button.sel{
+  background: var(--sel-fg);
+  color: var(--sel-bg);
+}
+.buttonField button.click{
+  background: var(--click-fg);
+  color: var(--click-bg);
+  transition: color 0s, background 0s;
+}
+.buttonField button:focus {outline:0;}
+
 /* An element that holds a table, usually with some type of stats in it*/
 .tableField{
   user-select: text;
@@ -81,6 +137,10 @@ body{
 .tableField table, .tableField td, .tableField th{
   border: 1px solid #000;
   height: 1em;
+}
+.tableField table .highlight{
+  color: var(--sel-bg);
+  background: var(--sel-fg);
 }
 .tableField th, .tableField td{
   padding-left: 0.2em;

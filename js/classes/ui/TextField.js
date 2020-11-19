@@ -7,6 +7,6 @@ class TextField extends UIPanel{
     }
     setText(txt){
       this.element.textContent = txt; return this;}
-    setHTML(html){
+    setHtml(html){
       this.element.innerHTML = html; return this;}
   }

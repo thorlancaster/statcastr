@@ -25,7 +25,11 @@ class Initializer {
     l.loadScript("js/classes/model/basketball/BasketballTeam.js");
     // UI
     l.loadScript("js/classes/ui/UIPanel.js");
+    l.loadScript("js/classes/TouchManager.js");
+    l.loadScript("js/classes/ui/Toast.js");
+    l.loadScript("js/classes/ui/ButtonField.js");
     l.loadScript("js/classes/ui/TextField.js");
+    l.loadScript("js/classes/ui/ProgressBarField.js");
     l.loadScript("js/classes/ui/ImageField.js");
     l.loadScript("js/classes/ui/NumberField.js");
     l.loadScript("js/classes/ui/TableField.js");
@@ -50,7 +54,7 @@ class Initializer {
     l.loadScript("js/classes/viewdisplay/TeamStatsDisplay.js");
     l.loadScript("js/classes/viewdisplay/AdminViewDisplay.js");
     // Synchronizr
-    l.loadScript("js/classes/synchronizr/Synchronizr.js")
+    l.loadScript("js/classes/synchronizr/Synchronizr.old.js")
     // Main App
     l.loadScript("js/classes/StatcastrApp.js");
 

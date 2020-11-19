@@ -16,6 +16,13 @@ function CLEAR(el){
   }
 }
 
+function ARRCNT(arr){
+  var rtn = 0;
+  for(var x = 0; x < arr.length; x++)
+    rtn += arr[x]==null?0:1;
+  return rtn;
+}
+
 function PUTSTR(arr, str, ptr){
   arr[ptr++] = (str.length >> 8);
   arr[ptr++] = str.length;

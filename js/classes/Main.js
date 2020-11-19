@@ -7,6 +7,7 @@ class Main{
         t.MOBILE_WIDTH = 780; // If narrower, mobile layout is used
         t.mobile = (window.innerWidth < t.MOBILE_WIDTH);
         t.sc = new StatcastrApp(DGE(APP_ROOT));
+        ToastSetRoot(APP_ROOT);
         t.syn = new Synchronizr();
         t.syn.setLocalData(t.sc.getStaticData(), t.sc.getDynamicData(), t.sc.getEventData());
         t.syn.setLocalDataClasses(t.sc.getStaticDataClass(), t.sc.getDynamicDataClass(), t.sc.getEventDataClass());

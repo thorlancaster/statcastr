@@ -23,19 +23,17 @@ class Initializer {
     l.loadScript("js/classes/ui/TableField.js");
     l.loadScript("js/classes/ui/TabSelector.js");
     // Main
-    l.loadScript("js/classes/model/GameModel.js");
-    l.loadScript("js/classes/model/basketball/BasketballGameModel.js");
-    l.loadScript("js/classes/model/basketball/BasketballPlayType.js");
-    l.loadScript("js/classes/model/basketball/BasketballPBP.js");
+    // l.loadScript("js/classes/model/GameModel.js");
+    // l.loadScript("js/classes/model/basketball/BasketballGameModel.js");
+    // l.loadScript("js/classes/model/basketball/BasketballPlayType.js");
+    // l.loadScript("js/classes/model/basketball/BasketballPBP.js");
+    l.loadScript("js/classes/synchronizr/ReliableChannel.js");
     l.loadScript("js/classes/synchronizr/SynchronizrMain.js");
     l.loadScript("js/classes/synchronizr/Synchronizr.js");
 
     // STYLES
     t.loadStyle("css/main.css");
 
-    // Start application when loaded
-    window.addEventListener("load", function(){
-    });
     window.addEventListener("resize", function(e){if(MAIN.onResize) MAIN.onResize(e);});
     window.addEventListener("focus", function(e){if(MAIN.onFocus) MAIN.onFocus(e);});
     window.addEventListener("blur", function(e){if(MAIN.onBlur) MAIN.onBlur(e);});
@@ -47,7 +45,7 @@ class Initializer {
     var t = this;
     try{
       window.MAIN = new SynchronizrMain();
-      // MAIN.init(APP_ROOT);
+      MAIN.init(APP_ROOT);
       t.setLoader(false);
     }
     catch(e){

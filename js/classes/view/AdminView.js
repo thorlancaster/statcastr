@@ -6,5 +6,8 @@ class AdminView extends View{
       t.header = new ScoreDisplayHeader();
       t.defaultStyle();
     }
+    onGesture(obj){
+      this.viewDisp.onGesture(obj);
+    }
   }
   

@@ -78,6 +78,9 @@ class UIPanel{
   removeClass(name){
     this.element.classList.remove(name); return this;}
 
+  hide(){this.setStyle("display", "none");}
+  show(){this.setStyle("display", null);}
+
   setStyle(name, value){this.element.style[name] = value; return this;}
   setStyles(n1, n2, v){
     this.setStyle(n1, v);

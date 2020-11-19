@@ -11,7 +11,20 @@ class TableField extends UIPanel{
       ts.width = "100%";
       t.appendChild(t.table);
       t.setColumns(columns);
+      t.clickListener = null;
+      t.clearHighlightsOnUpdate = false;
     }
+
+    /**
+     * Enables a click listener for each row of this table.
+     * Provided function will be called with row # when table is clicked.
+     * To disable the Click Listener, provide null as the argument.
+     * @param {Function} callback 
+     */
+    enableClickListener(callback){
+      var t = this;
+      t.clickListener = callback;
+    };
 
     /**
      * Sets the columns of this table by name.
@@ -33,10 +46,11 @@ class TableField extends UIPanel{
     /**
      * Add a given number of rows to the table
      * @param {Integer} num Number of rows to add
+     * @param {Integer} start Starting row number for click handling
      */
-    createRows(num){
+    createRows(num, start){
       for(var x = 0; x < num; x++){
-        this.table.appendChild(this.createRow(this.columns.length));
+        this.table.appendChild(this.createRow(this.columns.length, false, start+x));
       }
     }
     /**
@@ -44,9 +58,12 @@ class TableField extends UIPanel{
      * This function does not append to the table's DOM.
      * @param {Integer} cols Number of columns
      * @param {Boolean} head True to create a <th>, false for a <td>
+     * @param {Integer} num Number of this row for click handling
      */
-    createRow(cols, head){
+    createRow(cols, head, num){
+      var t = this;
       var el = DCE("tr");
+      el.dataset.cNum = num;
       var colsIsNum = (typeof cols == "number");
       var len = colsIsNum ? cols : cols.length;
       for(var x = 0; x < len; x++){
@@ -55,8 +72,56 @@ class TableField extends UIPanel{
          itm.textContent = cols[x];
         el.appendChild(itm);
       }
+      if(!head){
+        el.addEventListener("click", function(){
+          if(!t.clickListener) return;
+          t.onRowClick(parseInt(this.dataset.cNum));
+        });
+        el.addEventListener("touchend", function(e){
+          if(!t.clickListener) return;
+          e.uCanceledBy = t;
+        });
+      }
+
       return el;
     }
+    onRowClick(num){
+      this.clickListener(num);
+    }
+
+    /**
+     * Unhighlight all of the rows of this table
+     */
+    clearHighlights(){
+      var t = this;
+      var len = t.getLength();
+      for(var x = 0; x < len; x++){
+        t.getRow(x).classList.remove("highlight");
+      }
+    }
+    /**
+     * Set the highlight status of a row of this table
+     * @param {Integer} row Number of row or Row Object
+     * @param {Boolean} state True to highlight, false to unhighlight
+     */
+    setHighlight(row, state){
+      if(typeof row == "number")
+        row = this.getRow(row);
+      if(state)
+        row.classList.add("highlight");
+      else
+        row.classList.remove("highlight");
+    }
+    /**
+     * Get the highlight status of a row of this table
+     * @param {Integer} row Number of row or Row Object
+     */
+    getHighlight(row){
+      if(typeof row == "number")
+        row = this.getRow(row);
+      return row.classList.contains("highlight");
+    }
+
     // Setting element textContent is much faster than creating a new set
     // of DOM nodes every time the table needs resized.
     /**
@@ -69,8 +134,12 @@ class TableField extends UIPanel{
     setCell(x, y, text, useHTML){
         var t = this;
         t.ensureLength(y);
-        if(useHTML)t.table.children[y+2].children[x].innerHTML = text;
-        else t.table.children[y+2].children[x].innerText = text;
+        var r = t.getRow(y);
+        if(t.clearHighlightsOnUpdate && t.getHighlight(r)){
+          t.setHighlight(r, false);
+        }
+        if(useHTML)r.children[x].innerHTML = text;
+        else r.children[x].innerText = text;
     }
 
     /**
@@ -82,9 +151,17 @@ class TableField extends UIPanel{
     setRow(y, texts){
         var t = this;
         t.ensureLength(y);
-        var ch = t.table.children[y+2].children;
+        var r = t.getRow(y);
+        if(t.clearHighlightsOnUpdate && t.getHighlight(r)){
+          t.setHighlight(r, false);
+        }
+        var ch = t.getRow(y).children;
         for(var x = 0; x < ch.length; x++)
             ch[x].textContent = texts[x];
+    }
+
+    getRow(y){
+      return this.table.children[y+2];
     }
     /**
      * Return the number of rows in the table, excluding the header
@@ -103,7 +180,8 @@ class TableField extends UIPanel{
     /** Same as setLength(), but only adds */
     ensureLength(l){
         var t = this;
-        if(l+1 > t.getLength()) t.createRows(l+1 - t.getLength());
+        var len = t.getLength();
+        if(l+1 > len) t.createRows(l+1 - t.getLength(), len);
     }
     /** Same as setLength(), but only removes */
     truncate(l){
