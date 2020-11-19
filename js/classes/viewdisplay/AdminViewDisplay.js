@@ -221,7 +221,7 @@ class AdminWidget extends UIPanel {
 			console.log(r);
 			var team = r.team==null?null:(r.team==true?t.model.team:t.model.opp);
 			var abbr = team?team.abbr:"";
-			t.playReplacementLbl.setText("Replacing ["+abbr+"]");
+			t.playReplacementLbl.setText("Replacing ["+abbr+" "+BasketballPlayType+"]");
 		}
 		new Toast("PDT clicked " + rowNum);
 	}

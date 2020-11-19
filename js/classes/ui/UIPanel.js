@@ -16,6 +16,18 @@ class UIPanel{
     return this;
   }
 
+  removeChild(el){
+    if(el instanceof UIPanel){
+      this.element.removeChild(el.element);
+      var idx = this.children.indexOf(el);
+      if(idx != -1)
+        this.children.splice(idx, 1);
+    }
+    else
+      this.element.appendChild(el);
+    return this;
+  }
+
   /**
   * Function to call when this element's size changes
   * @caution To avoid layout thrashing, call this function on the root if possible

@@ -8,13 +8,22 @@ const Constants = {
 }
 
 class StatcastrApp{
-  constructor(appRootEl){
+  /**
+   * 
+   * @param {Element} appRootEl Root element to place app in
+   * @param {Synchronizr} synchronizr Synchronizr instance
+   * @param {String} eventId Id of event to listen to. Can be null
+   */
+  constructor(appRootEl, synchronizr, eventId){
     var t = this;
     assert(appRootEl != null, "App Root Element is required")
+    assert(synchronizr != null, "Synchronizr is required")
     t.appRoot = appRootEl;
+    t.synchronizr = synchronizr;
     t.appRoot.classList.add("appRoot");
     t.views = [];
     t.NULL_VIEW = new NullView();
+    t.eventId = eventId;
 
     t.viewSelector = t.createViewSelector();
     t.viewSelector.addSelectionListener(function(sel){t.onViewSelected(sel)});
@@ -36,8 +45,14 @@ class StatcastrApp{
     t.generateView("teamStats", new TeamStatsView(t.model, true));
     t.generateView("opponentStats", new TeamStatsView(t.model, false));
     t.generateView("admin", new AdminView(t.model));
-    t.setView("admin");
+    t.setView("scoreboard");
     t.update();
+    if(eventId == null) // If no event is selected, ask the user to choose one
+      t.onViewSelected("eventList");
+    else{
+      t.synchronizr.setEventId(eventId); // Otherwise, begin syncing to the current event
+      t.showMainDialog("loadingStatsFeed", "Event Id: " + eventId);
+    }
 
     // Allow the page to render before finishing
     setTimeout(function(){
@@ -49,6 +64,10 @@ class StatcastrApp{
     t.touchManager.addGestureListener(t.onGesture.bind(t));
     t.touchManager.start();
     window.TOUCH = t.touchManager;
+  }
+
+  setSynchronizr(s){
+    this.synchronizr = s;
   }
 
   onGesture(obj){
@@ -66,7 +85,7 @@ class StatcastrApp{
 
   onViewSelected(sel){
     switch(sel){
-      case "file":
+      case "eventList":
       case "help":
       this.showMainDialog(sel);
       break;
@@ -83,7 +102,7 @@ class StatcastrApp{
     vs.setStyle("flexShrink", "0");
     vs.setStyles("top", "left", "0px");
     vs.addIcon("favicon.ico");
-    vs.addTab("<u>F</u>ILE", "file", true);
+    vs.addTab("<u>E</u>VENTS", "eventList", true);
     vs.addTab("<u>S</u>COREBOARD", "scoreboard");
     vs.addTab("SPLIT&nbsp;<u>B</u>OX", "splitBox");
     vs.addTab("<u>T</u>EAM STATS", "teamStats");
@@ -111,8 +130,123 @@ class StatcastrApp{
     this.views.push([name, obj]);
   }
 
-  showMainDialog(dlg){
-    console.log("TODO SHOW DIALOG " + dlg);
+  createLoadingField(){
+    return new TextField("<div class='lds-ring'><div></div><div></div><div></div><div></div></div>", true).setStyle("textAlign", "center");
+  }
+
+  showMainDialog(dlg, arg2, arg3){
+    var t = this;
+    if(dlg == "loadingStatsFeed"){
+      var d = new Dialog("&nbsp;Loading stats feed...&nbsp;");
+      d.setId("loadingStatsDlg");
+      d.body.appendChild(new TextField("Please wait a few seconds<br/>Or press 'X' to choose another event", true).setStyle("textAlign", "center"));
+      d.loading = t.createLoadingField();
+      d.body.appendChild(d.loading);
+      if(arg2 && arg3)
+        d.body.appendChild(new TextField(arg2 + " &nbsp;-vs-&nbsp; " + arg3, true));
+      else if(arg2)
+        d.body.appendChild(new TextField(arg2, true));
+      
+      d.onClose = function(){
+        t.synchronizr.reconnect();
+        t.showMainDialog("eventList");
+      }
+      d.show();
+    }
+    else if(dlg == "eventList"){
+      var d = new Dialog("Loading event list...");
+      var tbl = new TableField(["ID", "Type", "Team", "Opponent", "Location", "Time", "Info"]);
+      d.body.appendChild(tbl);
+      d.loading = t.createLoadingField();
+      d.body.appendChild(d.loading);
+
+      if(!t.eventId){
+        d.closeBtn.setBgColor("var(--disabled-fg)");
+      }
+
+      t.evtSelTbl = tbl;
+      t.evtSelDlg = d;
+      
+      var sd = t.synchronizr.staticData;
+      if(Synchronizr.byteArrToStr(sd[0]) == "list"){
+        t.updateEvtSelTbl(sd.slice(1));
+      } else {
+        t.synchronizr.setEventId(null);
+      }
+
+      tbl.enableClickListener(function(row){
+        tbl.clearHighlights();
+        tbl.setHighlight(row, true);
+        t.eventId = tbl.getCell(0, row, false);
+        t.eventTeam = tbl.getCell(2, row, false);
+        t.eventOpp = tbl.getCell(3, row, false);
+        t.synchronizr.setEventId(t.eventId);
+        t.evtSelDlg.remove();
+        var url = new URL(location.href);
+        var params = url.searchParams;
+        params.set("event", t.eventId);
+        url.search = params.toString();
+        console.log(url.toString());
+        history.replaceState("Statcastr", document.title, url.toString());
+        t.showMainDialog("loadingStatsFeed", t.eventTeam, t.eventOpp);
+      });
+
+      d.onClose = function(){
+        if(!t.eventId){
+          new Toast("No Event Selected");
+          return false;
+        } else {
+          t.synchronizr.setEventId(t.eventId);
+          t.showMainDialog("loadingStatsFeed", t.eventTeam, t.eventOpp);
+        }
+      }
+      d.show();
+    } else if(dlg == "help"){
+      var d = new Dialog("Help");
+      d.show();
+    }
+    else console.warn("Unsupported ShowMainDialog " + dlg);
+  }
+
+  updateEvtSelTbl(arr){
+    var t = this;
+    if(!t.evtSelDlg) return;
+    t.evtSelDlg.setTitle("Choose an event");
+    t.evtSelDlg.body.removeChild(t.evtSelDlg.loading);
+    var tbl = t.evtSelTbl;
+    if(tbl){
+      tbl.setLength(arr.length);
+      for(var x = 0; x < arr.length; x++){
+        var ptr = [0];
+        var arrx = arr[x];
+        var id = Synchronizr.byteArrToStr(Synchronizr.parseField(arrx, ptr));
+        var type = Synchronizr.byteArrToStr(Synchronizr.parseField(arrx, ptr));
+        var hInfo = Synchronizr.parseField(arrx, ptr);
+        var gInfo = Synchronizr.parseField(arrx, ptr);
+        var hPtr = [0];
+        var gPtr = [0];
+        var hTown = Synchronizr.byteArrToStr(Synchronizr.parseField(hInfo, hPtr));
+        var hMascot = Synchronizr.byteArrToStr(Synchronizr.parseField(hInfo, hPtr));
+        var hAbbr = Synchronizr.byteArrToStr(Synchronizr.parseField(hInfo, hPtr));
+
+        var gTown = Synchronizr.byteArrToStr(Synchronizr.parseField(gInfo, gPtr));
+        var gMascot = Synchronizr.byteArrToStr(Synchronizr.parseField(gInfo, gPtr));
+        var gAbbr = Synchronizr.byteArrToStr(Synchronizr.parseField(gInfo, gPtr));
+
+        var location = Synchronizr.byteArrToStr(Synchronizr.parseField(arrx, ptr));
+        var comments = Synchronizr.byteArrToStr(Synchronizr.parseField(arrx, ptr));
+        var startTime = Synchronizr.byteArrToStr(Synchronizr.parseField(arrx, ptr));
+        var gender = Synchronizr.byteArrToStr(Synchronizr.parseField(arrx, ptr));
+        // console.log(id, type, {hTown, hMascot, hAbbr}, {gTown, gMascot, gAbbr}, location, comments, startTime, gender);
+        tbl.setCell(0, x, "<span class='link'>"+id+"</a>", true);
+        tbl.setCell(1, x, gender + " " + type);
+        tbl.setCell(2, x, hAbbr + " " + hMascot);
+        tbl.setCell(3, x, gAbbr + " " + gMascot);
+        tbl.setCell(4, x, location);
+        tbl.setCell(5, x, startTime);
+        tbl.setCell(6, x, comments.length ? comments : "--");
+      }
+    }
   }
 
   setView(vid){
@@ -159,23 +293,32 @@ class StatcastrApp{
   }
 
   /* Stuff for Synchronizr compatibliity */
-  getStaticData(){return this.model.getStaticData();}
-  getStaticDataClass(){return null}
-  getDynamicData(){return this.model.getDynamicData();}
-  getDynamicDataClass(){return null}
-  getEventData(){return this.model.getEventData();}
-  getEventDataClass(){return BasketballPBPItem;}
-  onSynchronizrUpdate(s, d, e){
+  onSynchronizrUpdate(s, d, e, sd, dd, ed){
     var t = this;
-    if(s){
-      t.model.reloadRosters();
-      t.model.reloadFromPBP();
-    } else if(e === true){ // Event data modified beyond appending
-      t.model.reloadFromPBP();
-    } else if(typeof e == "number"){
-      for(var x = 0; x < e; x++)
-        t.model.updateFromPBP(-x);
+    var type = Synchronizr.byteArrToStr(sd[0]);
+    if(type == "list"){
+      t.updateEvtSelTbl(sd.slice(1));
     }
-    t.update();
+    else if(type == "bbgame"){
+      Dialog.removeById("loadingStatsDlg");
+      var needsPbpRl = false;
+      if(s){
+        t.model.updateStaticData(sd);
+        t.model.reloadRosters();
+        needsPbpRl = true;
+      } if(e === true){ // Event data modified beyond appending
+        t.model.updateEventData(ed);
+        needsPbpRl = true;
+      } else if(typeof e == "number"){
+        t.model.updateEventData(ed, e);
+        for(var x = 0; x < e; x++)
+          t.model.updateFromPBP(-1 -x);
+      }
+      // TODO update InstatClock or whatever it ends up being called
+      if(needsPbpRl)
+        t.model.reloadFromPBP();
+      t.update();
+    }
+    // console.log(s, d, e);
   }
 }

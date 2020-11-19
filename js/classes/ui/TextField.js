@@ -1,9 +1,11 @@
 class TextField extends UIPanel{
-    constructor(txt){
+    constructor(txt, useHtml){
       super();
       this.addClass("textField");
-      if(txt != null)
-        this.setText(txt);
+      if(txt != null){
+        if(useHtml) this.setHtml(txt);
+        else this.setText(txt);
+      }
     }
     setText(txt){
       this.element.textContent = txt; return this;}

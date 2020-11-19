@@ -31,6 +31,7 @@ class ReliableChannel{
     isClosed(){throw "Abstract Method"}
     connect(){throw "Abstract Method"}
     disconnect(){throw "Abstract Method"}
+    reconnect(){throw "Abstract Method"}
 }
 
 class WebsocketReliableChannel extends ReliableChannel{
@@ -97,6 +98,11 @@ class WebsocketReliableChannel extends ReliableChannel{
                 t.opCallback(t.connPort);
         });
         t.connAttemptTime = Date.now();
+    }
+
+    reconnect(){
+        this.disconnect();
+        this.connect();
     }
 
     handleWsClose(e){

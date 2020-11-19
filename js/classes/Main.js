@@ -6,54 +6,21 @@ class Main{
         window.MAIN = this;
         t.MOBILE_WIDTH = 780; // If narrower, mobile layout is used
         t.mobile = (window.innerWidth < t.MOBILE_WIDTH);
-        t.sc = new StatcastrApp(DGE(APP_ROOT));
-        ToastSetRoot(APP_ROOT);
-        t.syn = new Synchronizr();
-        t.syn.setLocalData(t.sc.getStaticData(), t.sc.getDynamicData(), t.sc.getEventData());
-        t.syn.setLocalDataClasses(t.sc.getStaticDataClass(), t.sc.getDynamicDataClass(), t.sc.getEventDataClass());
-        t.syn.setUpdateCallback(function(s, d, e){t.sc.onSynchronizrUpdate(s, d, e)});
+        // ToastSetRoot(APP_ROOT);
+        var eventId = new URL(location.href).searchParams.get("event");
+        var s = new Synchronizr();
+        t.sc = new StatcastrApp(DGE(APP_ROOT), s, eventId);
+        // s.setLocalData(t.sc.getStaticData(), t.sc.getDynamicData(), t.sc.getEventData());
+        // s.setLocalDataClasses(t.sc.getStaticDataClass(), t.sc.getDynamicDataClass(), t.sc.getEventDataClass());
+        s.setUpdateCallback(t.sc.onSynchronizrUpdate.bind(t.sc));
 
-        var initBa = t.u8FromB64("AAFKAKsAE0Zyb2lkIE1lZGljaW5lLUxha2UACFJlZGhhd2tzAANGTUwAJ3Jlc291cmNlcy9tYXNjb3RzL2Zyb2lkbWVkaWNpbmVsYWtlLnBuZwANSXNhYWMgSm9obnNvboEADkphdm9ubmUgTmVzYml0gwALQ29sdCBNaWxsZXKVAA1NYXNvbiBEZXRobWFumAALQm9kZSBNaWxsZXKsAA5CcmV0dCBTdGVudG9mdC0AmwAHQm96ZW1hbgAKU3RhdENhc3RycwADU1RDACFyZXNvdXJjZXMvZmF2aWNvbi9mYXZpY29uLTI1Ni5wbmcADUlzYWFjIEpvaG5zb26BAA5KYXZvbm5lIE5lc2JpdIMAC0NvbHQgTWlsbGVylQANTWFzb24gRGV0aG1hbpgAC0JvZGUgTWlsbGVyrAAOQnJldHQgU3RlbnRvZnQtAAAGAAQCBz94AACQAAcBB1MAARIAAAcBB0dIAY0AAAcBBz94A4EAAAcBByvwFYUAAAcBBxhoGJEAAAcBBwTgLJAAAAcBBhqALJQAAAcBBhqALZMAAAcBBWq4AUkAAAcBBVcwA0MAAAcBBUOoFU4AAAcBBTAgGEcAAAcBBRyYLEgAAAcBAAAAARIAAAcCB1MAAhIAAAcCBz94A4cA");
-
-        var opcodeBa = t.u8FromB64("");
-
-        t.syn.applySerializedFull(initBa);
-
-        // t.syn.applyOpcodes(opcodeBa);
-        
-
-        var st = new SynchronizrState();
-
-        var sba = t.syn.getSerializedArray(t.syn.staticData);
-        var dba = t.syn.getSerializedArray(t.syn.dynamicData);
-        var eba = t.syn.getSerializedArray(t.syn.eventData);
-
-        var codez = st.update(sba, dba, eba);
-        console.log(t.u8ToString(codez));
-
-        console.log(st);
-
-        // Player 24 of the Home team scores a Dunk at Period 2 6:34
-        // All this info fits in only 13 measly bytes!!!
-        var tst = [];
-        tst.push("E".charCodeAt(0)); // Command: Set array to Events
-        tst.push("s".charCodeAt(0)); // Command: Set item
-        tst.push(0);
-        tst.push(16); // Index
-        tst.push(0);
-        tst.push(7); // Payload Length
-        tst.push(2) // Period
-        tst.push(6) // Millis MSB
-        tst.push(6) // Millis
-        tst.push(6) // Millis LSB
-        tst.push(24) // Player ID
-        tst.push(128 + BasketballPlayType.DUNK_MADE); // Team Flag (2 MSB) and play type (6 LSB)
-        tst.push(0); // Play flags
-        tst = new Uint8Array(tst);
-        console.log(tst);
-        setTimeout(function(){ // Apply the new play in 5 seconds
-            t.syn.applyOpcodes(tst);
-        }, 5000);
+        t.channel = new WebsocketReliableChannel();
+        t.channel.setTarget("ws://localhost", 1234);
+        s.setChannel(t.channel);
+        t.channel.connect();
+        console.log("SynchronizrMain: Channel started");
+        window.CHANNEL = t.channel;
+        window.SC  = t.sc;
     }
 
     onResize(){

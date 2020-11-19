@@ -13,10 +13,10 @@ class BasketballPBPItem extends PBPItem{
     this.type = type;
   }
   // The following functions are required for Synchronizr serialization / deserialization
-  // Binary format (byte-wise) period  millis[MSB] millis[NSB] millis[LSB]  pid  byte(team, type)  RESERVED
+  // Binary format (byte-wise) period  millis[MSB] millis[NSB] millis[LSB]  pid  byte(team, type) RESERVED RESERVED
   toByteArray(){
     var t = this;
-    var a = new Uint8Array(7);
+    var a = new Uint8Array(8);
     var tflag = t.team==true?128:(t.team==false?64:0)
     a[0] = t.period;
     a[1] = t.millis >> 16;
@@ -25,10 +25,11 @@ class BasketballPBPItem extends PBPItem{
     a[4] = t.pid == "00" ? "255" : parseInt(t.pid);
     a[5] = tflag + (t.type&63);
     a[6] = 0;
+    a[7] = 0;
     return a;
   }
   fromByteArray(a){
-    assert(a.length == 7, "Illegal Array Length");
+    assert(a.length == 8, "Illegal Array Length");
     var t = this;
     t.period = a[0];
     t.millis = a[1] * 65536 + a[2] * 256 + a[3];

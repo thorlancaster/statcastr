@@ -8,6 +8,9 @@ body{
   --disabled-fg: #999;
   --main-bg1: #344;
   --main-bg2: #111;
+  --link-color: #07F;
+  --link-color-hover: #FA0;
+  --semitransparent-bg: #334444E3;
   --main-fg: #FFF;
   --team-color1: #F00;
   --opp-color1: #05F;
@@ -17,6 +20,8 @@ body{
   --sel-bg: #000;
   --click-fg: #F60;
   --click-bg: #000;
+  --loading-col1: #F00;
+  --loading-col2: #FFF;
   color: #FFF;
   margin: 0;
   font-family: "Helvetica", "sans-serif";
@@ -33,7 +38,34 @@ body{
   font-size: 0.8em;
 }
 
+.link{
+  text-decoration: underline;
+  font-weight: bold;
+  color: var(--link-color);
+  transition: color 0.2s;
+}
+
+.link:hover{
+  color: var(--link-color-hover);
+}
+
+.dialog{
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.dialog .dialogBox{
+  transform: scale(0.5);
+  transition: transform 0.15s;
+}
+.dialog.showing{
+  opacity: 1;
+}
+.dialog.showing .dialogBox{
+  transform: scale(1.0);
+}
+
 .toast{
+  z-index: 3;
   position: fixed;
   bottom: 2px;
   left: 50%;
@@ -109,6 +141,7 @@ body{
   height: 100%;
 }
 .buttonField button{
+  cursor: pointer;
   font-size: 1.1em;
   border: 2px solid;
   background: var(--main-bg1);
@@ -174,3 +207,44 @@ body{
   width: 100%;
   height: 100%;
 }
+
+/* Source loading.io/css */
+.lds-ring {
+  display: inline-block;
+  position: relative;
+  width: 2.8em;
+  height: 2.8em;
+}
+.lds-ring div {
+  box-sizing: border-box;
+  display: block;
+  position: absolute;
+  width: 2em;
+  height: 2em;
+  margin: 0.4em;
+  border: 0.4em solid #F00;
+  border-radius: 50%;
+  animation: lds-ring 1.2s cubic-bezier(0.5, 0.1, 0.5, 0.9) infinite;
+  border-color: var(--loading-col1) transparent transparent transparent;
+}
+.lds-ring div:nth-child(1) {
+  border-color: var(--loading-col2) transparent transparent transparent;
+  animation-delay: -0.45s;
+}
+.lds-ring div:nth-child(2) {
+  border-color: var(--loading-col1) transparent transparent transparent;
+  animation-delay: -0.3s;
+}
+.lds-ring div:nth-child(3) {
+  border-color: var(--loading-col2) transparent transparent transparent;
+  animation-delay: -0.15s;
+}
+@keyframes lds-ring {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+/* </source> */

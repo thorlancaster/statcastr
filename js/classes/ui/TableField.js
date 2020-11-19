@@ -24,6 +24,12 @@ class TableField extends UIPanel{
     enableClickListener(callback){
       var t = this;
       t.clickListener = callback;
+      
+      var clk = (callback == null);
+      var len = t.getLength();
+      for(var x = 0; x < len; x++){
+        t.getRow(x).style.cursor = clk ? "pointer" : "default";
+      }
     };
 
     /**
@@ -73,6 +79,7 @@ class TableField extends UIPanel{
         el.appendChild(itm);
       }
       if(!head){
+        el.style.cursor = t.clickListener ? "pointer" : "default";
         el.addEventListener("click", function(){
           if(!t.clickListener) return;
           t.onRowClick(parseInt(this.dataset.cNum));
@@ -140,6 +147,13 @@ class TableField extends UIPanel{
         }
         if(useHTML)r.children[x].innerHTML = text;
         else r.children[x].innerText = text;
+    }
+
+    getCell(x, y, useHTML){
+      var t = this;
+      var r = t.getRow(y);
+      if(useHTML) return r.children[x].innerHTML;
+      else return r.children[x].innerText;
     }
 
     /**

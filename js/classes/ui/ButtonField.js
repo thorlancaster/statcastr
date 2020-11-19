@@ -30,6 +30,19 @@ class ButtonField extends UIPanel{
 	}
 	setBorderColor(col){
 		this.btn.style.borderColor = col;
+		return this;
+	}
+	setBgColor(col){
+		this.btn.style.background = col;
+		return this;
+	}
+	setfgColor(col){
+		this.btn.style.color = col;
+		return this;
+	}
+	setBorder(bd){
+		this.btn.style.border = bd;
+		return this;
 	}
 	setEnabled(e){
 		var t = this;

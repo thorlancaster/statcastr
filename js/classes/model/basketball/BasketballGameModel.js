@@ -17,6 +17,7 @@ class BasketballGameModel extends GameModel{
     t.team = new BasketballTeam();
     t.opp = new BasketballTeam();
     t.pbp = new BasketballPlayByPlay();
+    t.PBP_CLASS = BasketballPBPItem;
     t.pbpCacheLength = 0; // For debugging assert() and sanity checks
     t.initSubStats();
   }
@@ -149,8 +150,8 @@ class BasketballGameModel extends GameModel{
     var x = playNum;
     if(playNum == null){
       x = t.pbp.plays.length-1;
-    } else if(playNum <= 0){
-      x = t.pbp.plays.length-1+playNum;
+    } else if(playNum < 0){
+      x = t.pbp.plays.length + playNum;
     }
     t.pbpCacheLength++;
     if(playNum == null){
@@ -169,9 +170,9 @@ class BasketballGameModel extends GameModel{
 
     if(p.team == true){
       p.rTeamScore = (lp?lp.rTeamScore:0) + BasketballPlayType.pointsOf(p.type);
-      p.rOppScore = lp.rOppScore;
+      p.rOppScore = lp?lp.rOppScore:0;
     }else if(p.team == false){
-      p.rTeamScore = lp.rTeamScore;
+      p.rTeamScore = lp?lp.rTeamScore:0;
       p.rOppScore = (lp?lp.rOppScore:0) + BasketballPlayType.pointsOf(p.type);
     }
     else{ // Play does not belong to either team, must be game mgmt
@@ -190,15 +191,27 @@ class BasketballGameModel extends GameModel{
   }
 
   /* Stuff for Synchronizr compatibliity */
-  getStaticData(){
-    return [this.team, this.opp];
+  // getStaticData(){
+  //   return [this.team, this.opp];
+  // }
+  // getDynamicData(){
+  //   var t = this;
+  //   return [this.clock];
+  // }
+  // getEventData(){
+  //   return this.pbp.plays;
+  // }
+  updateStaticData(d){
+    // Set the rosters, names, etc.
+    this.parseSportsBallRosterBytecode(d);
   }
-  getDynamicData(){
-    var t = this;
-    return [this.clock];
+  updateDynamicData(d){
+    // TODO set the clock, etc from d
   }
-  getEventData(){
-    return this.pbp.plays;
+  updateEventData(d, n){
+    // Set the last n PBPs from the last n of d
+    if(!n) n = d.length;
+    this.parseSportsBallPBPBytecode(d, n);
   }
 }
 
