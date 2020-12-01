@@ -1,5 +1,5 @@
 class ButtonField extends UIPanel{
-	constructor(btnText, fullSize){
+	constructor(btnText, fullSize, useHtml){
 		super();
 		var t = this;
 		t.clickListeners = [];
@@ -7,7 +7,10 @@ class ButtonField extends UIPanel{
 		t.btn = DCE("button");
 		t.addClass("buttonField");
 		t.appendChild(t.btn);
-		t.setText(btnText);
+		if(useHtml)
+			t.setHtml(btnText);
+		else
+			t.setText(btnText);
 		t.btn.addEventListener("click", t.click.bind(t));
 		t.btn.addEventListener("touchend", function(e){
 			if(!t.enabled) return;
@@ -15,8 +18,11 @@ class ButtonField extends UIPanel{
 		});
 		t.enabled = true;
 	}
-	click(){
+	click(e){
 		var t = this;
+		if(!t.kbSupported && e && e.offsetX == 0 && e.offsetY == 0 && e.pageX == 0 && e.pageY == 0
+			&& e.screenX == 0 && e.screenY == 0)
+			return;
 		if(!t.enabled)
 			return; // Disabled
 		for(var x = 0; x < t.clickListeners.length; x++)
@@ -27,6 +33,9 @@ class ButtonField extends UIPanel{
 		t.timeout = setTimeout(function(){
 			t.btn.classList.remove("click");
 		}, 100);
+	}
+	setKeyboardSupport(x){
+		t.kbSupported = x;
 	}
 	setBorderColor(col){
 		this.btn.style.borderColor = col;

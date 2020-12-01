@@ -29,29 +29,6 @@ class BasketballGameModel extends GameModel{
     }
   }
 
-  // dbgCreatePlayByPlay(){
-  //   var p = this.pbp;
-  //   this.team.starters = ["1", "3", "21", "24", "44"];
-  //   this.opp.starters = ["1", "3", "21", "24", "44"];
-  //   p.addPlay(new BasketballPBPItem(1, 480 * 1000, 1, null, BasketballPlayType.SET_CLOCK));
-  //   p.addPlay(new BasketballPBPItem(1, 477 * 1000, "1", true, BasketballPlayType.REB_UNK));
-  //   p.addPlay(new BasketballPBPItem(1, 475 * 1000, "3", true, BasketballPlayType.FOUL_P));
-  //   p.addPlay(new BasketballPBPItem(1, 470 * 1000, "21", true, BasketballPlayType.P2_MADE));
-  //   p.addPlay(new BasketballPBPItem(1, 465 * 1000, "24", true, BasketballPlayType.TURNOVER));
-  //   p.addPlay(new BasketballPBPItem(1, 460 * 1000, "44", true, BasketballPlayType.STEAL));
-
-  //   p.addPlay(new BasketballPBPItem(1, 400 * 1000, "44", true, BasketballPlayType.SUB_OUT));
-  //   p.addPlay(new BasketballPBPItem(1, 400 * 1000, "45", true, BasketballPlayType.SUB_IN));
-
-  //   p.addPlay(new BasketballPBPItem(1, 355 * 1000, "1", false, BasketballPlayType.P3_MADE));
-  //   p.addPlay(new BasketballPBPItem(1, 350 * 1000, "3", false, BasketballPlayType.FT_MADE));
-  //   p.addPlay(new BasketballPBPItem(1, 345 * 1000, "21", false, BasketballPlayType.ASSIST));
-  //   p.addPlay(new BasketballPBPItem(1, 340 * 1000, "24", false, BasketballPlayType.DUNK_MADE));
-  //   p.addPlay(new BasketballPBPItem(1, 335 * 1000, "44", false, BasketballPlayType.DUNK_MISS));
-  //   p.addPlay(new BasketballPBPItem(1, 0         , 1, null, BasketballPlayType.SET_CLOCK));
-  //   p.addPlay(new BasketballPBPItem(2, 480 * 1000, 2, null, BasketballPlayType.SET_CLOCK));
-  //   p.addPlay(new BasketballPBPItem(2, 475 * 1000, "3", true, BasketballPlayType.DUNK_MADE));
-  // }
   /**
    * Get human-readable information on a Play-by-Play
    * @param {*} pbp PBPItem object
@@ -155,7 +132,7 @@ class BasketballGameModel extends GameModel{
     }
     t.pbpCacheLength++;
     if(playNum == null){
-      assert(t.pbpCacheLength == t.pbp.length, "PBP cache length mismatch");
+      assert(t.pbpCacheLength == t.pbp.plays.length, "PBP cache length mismatch");
     }
     var p = t.pbp.plays[x]; // Current Play
     var lp = t.pbp.plays[x-1]; // Last Play
@@ -188,30 +165,6 @@ class BasketballGameModel extends GameModel{
         break;
       }
     }
-  }
-
-  /* Stuff for Synchronizr compatibliity */
-  // getStaticData(){
-  //   return [this.team, this.opp];
-  // }
-  // getDynamicData(){
-  //   var t = this;
-  //   return [this.clock];
-  // }
-  // getEventData(){
-  //   return this.pbp.plays;
-  // }
-  updateStaticData(d){
-    // Set the rosters, names, etc.
-    this.parseSportsBallRosterBytecode(d);
-  }
-  updateDynamicData(d){
-    // TODO set the clock, etc from d
-  }
-  updateEventData(d, n){
-    // Set the last n PBPs from the last n of d
-    if(!n) n = d.length;
-    this.parseSportsBallPBPBytecode(d, n);
   }
 }
 

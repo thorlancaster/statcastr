@@ -15,6 +15,7 @@ class Initializer {
     // SCRIPTS
     // Dependencies
     l.loadScript("js/libs/utils.js");
+    l.loadScript("js/classes/MD5.js");
     // UI
     l.loadScript("js/classes/ui/UIPanel.js");
     l.loadScript("js/classes/ui/TextField.js");

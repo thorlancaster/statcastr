@@ -9,33 +9,42 @@ class GameModel {
     this.desc = null;
   }
 
-   /**
-   * Parse an array of SportsBall bytecode (Synchronizr.EVENT for PBP)
-   * and apply the result to this model.
-   * @param {Array} arrs SportsBall Bytecode as Synchronizr.EVENT
-   */
-  parseSportsBallPBPBytecode(arrs, limit) {
+  /**
+  * Parse an array of bytecode (Synchronizr.EVENT for PBP)
+  * and apply the result to this model.
+  * @param {Array} arrs Bytecode as Synchronizr.EVENT
+  */
+  parsePBPBytecode(arrs, limit) {
     var t = this;
     var l = arrs.length;
     var pls = t.pbp.plays;
-    for(var x = l - 1; x >= l - limit; x--){
-      if(!pls[x])
+    for (var x = l - 1; x >= l - limit; x--) {
+      if (!pls[x])
         pls[x] = new t.PBP_CLASS();
       pls[x].fromByteArray(arrs[x]);
     }
   }
+  genPBPBytecode(limit) {
+    var t = this;
+    var rtn = [];
+    var pls = t.pbp.plays;
+    for (var x = 0; x < pls.length; x++) {
+      rtn[x] = pls[x].toByteArray();
+    }
+    return rtn;
+  }
 
   /**
-   * Parse an array of SportsBall bytecode (Synchronizr.STATIC for events)
+   * Parse an array of bytecode (Synchronizr.STATIC for events)
    * and apply the result to this model. Data contains team names, game
    * description (tournaments etc.) and rosters.
-   * @param {Array} arrs SportsBall Bytecode as Synchronizr.STATIC
+   * @param {Array} arrs Bytecode as Synchronizr.STATIC
    */
-  parseSportsBallRosterBytecode(arrs) {
+  parseEventBytecode(arrs) {
     var t = this;
     // Parse the bytecode
     var ptr = [0];
-    var type = Synchronizr.byteArrToStr(arrs[0]);
+    t.type = Synchronizr.byteArrToStr(arrs[0]);
     var hTown = Synchronizr.byteArrToStr(Synchronizr.parseField(arrs[1], ptr));
     var hMascot = Synchronizr.byteArrToStr(Synchronizr.parseField(arrs[1], ptr));
     var hAbbr = Synchronizr.byteArrToStr(Synchronizr.parseField(arrs[1], ptr));
@@ -46,10 +55,10 @@ class GameModel {
     var gAbbr = Synchronizr.byteArrToStr(Synchronizr.parseField(arrs[2], ptr));
     var gImg = Synchronizr.byteArrToStr(Synchronizr.parseField(arrs[2], ptr));
 
-    var location = Synchronizr.byteArrToStr(arrs[3]);
-    var desc = Synchronizr.byteArrToStr(arrs[4]);
-    var startTime = Synchronizr.byteArrToStr(arrs[5]);
-    var gender = Synchronizr.byteArrToStr(arrs[6]);
+    t.location = Synchronizr.byteArrToStr(arrs[3]);
+    t.desc = Synchronizr.byteArrToStr(arrs[4]);
+    t.startTime = Synchronizr.byteArrToStr(arrs[5]);
+    t.gender = Synchronizr.byteArrToStr(arrs[6]);
 
     ptr[0] = 0;
     var hPlyrs = [], gPlyrs = [];
@@ -63,9 +72,6 @@ class GameModel {
       if (s) gPlyrs.push(s); else break;
     }
     // Apply the results
-    t.gender = gender;
-    t.location = location;
-    t.desc = desc;
 
     t.team.town = hTown;
     t.team.name = hMascot;
@@ -81,6 +87,109 @@ class GameModel {
 
     // console.log(type, { hTown, hMascot, hAbbr }, { gTown, gMascot, gAbbr }, location, desc, startTime, gender, hPlyrs, gPlyrs);
     // debugger;
+  }
+
+  genEventBytecode() {
+    var t = this;
+    var rtn = [];
+    rtn[0] = Synchronizr.strToByteArr(t.type);
+    rtn[1] = t.genEventBytecode0(t.team);
+    rtn[2] = t.genEventBytecode0(t.opp);
+    rtn[3] = Synchronizr.strToByteArr(t.location);
+    rtn[4] = Synchronizr.strToByteArr(t.desc);
+    rtn[5] = Synchronizr.strToByteArr(t.startTime);
+    rtn[6] = Synchronizr.strToByteArr(t.gender);
+    rtn[8] = t.genRosterBytecode0(t.team);
+    rtn[9] = t.genRosterBytecode0(t.opp);
+    return rtn;
+  }
+  genRosterBytecode0(team) {
+    var len = 0;
+    for (var x in team.players) {
+      var ply = team.players[x];
+      var sta = team.starters.includes(ply.id);
+      len += ("" + ply.id).length;
+      len += ply.name.length + 1 + 2 + (sta ? 1 : 0);
+    }
+    var rtn = new Uint8Array(len);
+    var ptr = 0;
+    for (var x in team.players) {
+      var ply = team.players[x];
+      var sta = team.starters.includes(ply.id);
+      var itm = Synchronizr.strToByteArr((sta ? "S" : "") + ply.id + " " + ply.name);
+      rtn[ptr++] = itm.length >> 8;
+      rtn[ptr++] = itm.length & 0xFF;
+      Synchronizr.memcpy(rtn, itm, ptr, itm.length);
+      ptr += itm.length;
+    }
+    return rtn;
+  }
+  genEventBytecode0(team) {
+    var town = Synchronizr.strToByteArr(team.town);
+    var name = Synchronizr.strToByteArr(team.name);
+    var abbr = Synchronizr.strToByteArr(team.abbr);
+    var img = Synchronizr.strToByteArr(team.image);
+    return Synchronizr.joinArrs([town, name, abbr, img]);
+  }
+
+  /* Stuff for Synchronizr compatibliity */
+  getStaticData() {
+    this.synSInvalid = false;
+    return this.genEventBytecode();
+  }
+  getDynamicData() {
+    this.synDInvalid = false;
+    return [];
+  }
+  getEventData() {
+    var e = this.synEInvalid;
+    this.synEInvalid = false;
+    return this.genPBPBytecode(e);
+  }
+  isStaticInvalid() {
+    return this.synSInvalid;
+  }
+  isDynamicInvalid() {
+    return this.synDInvalid;
+  }
+  isEventInvalid() {
+    return this.synEInvalid;
+  }
+  invalidateStatic() {
+    this.synSInvalid = true;
+  }
+  invalidateDynamic() {
+    this.synDInvalid = true;
+  }
+  invalidateEvent(e) {
+    var t = this;
+    if (e === true)
+      t.synSInvalid = e;
+    else if (t.synSInvalid !== true) {
+      t.synEInvalid |= 0;
+      t.synEInvalid += e;
+    }
+  }
+  revalidateStatic() {
+    this.synSInvalid = false;
+  }
+  revalidateDynamic() {
+    this.synDInvalid = false;
+  }
+  revalidateEvent(e) {
+    this.synEInvalid = false;
+  }
+  updateStaticData(d) {
+    // Set the rosters, names, etc.
+    this.parseEventBytecode(d);
+  }
+  updateDynamicData(d) {
+    // TODO set the clock, etc from d
+  }
+  updateEventData(d, n) {
+    // Set the last n PBPs from the last n of d
+    if (!n) n = d.length;
+    this.parsePBPBytecode(d, n);
   }
 }
 
@@ -221,11 +330,11 @@ class Team {
       var n = p.substring(i + 1);
       var ply = new this.PLAYER_CLASS();
       var st = false;
-      if(pid[0] == 'S'){st = true; pid = pid.substring(1);}
+      if (pid[0] == 'S') { st = true; pid = pid.substring(1); }
       ply.id = pid;
       ply.name = n;
       ply.onCourt = true;
-      if(st)
+      if (st)
         this.starters.push(pid);
       this.addPlayer(ply);
     }

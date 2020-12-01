@@ -15,6 +15,13 @@ function SYNCHRONIZR_OPCODES() {
     op.SET_ITEM = "s";
     op.APPEND_ITEM = "a";
     op.SET_RANGE = "r";
+    op.SET_LENGTH = "l";
+    op.START_DBL_BUFFER = "d";
+    op.END_DBL_BUFFER = "e";
+    op.REQUEST_ADMIN = "X";
+    op.LEAVE_ADMIN = "U";
+    op.VALIDATE_HASH_REQ = "H";
+    op.VALIDATE_HASH_RESP = "h";
 
     op.NULL_BT = op.NULL.charCodeAt(0);
     op.EOF_BT = op.EOF.charCodeAt(0);
@@ -28,6 +35,13 @@ function SYNCHRONIZR_OPCODES() {
     op.SET_ITEM_BT = op.SET_ITEM.charCodeAt(0);
     op.APPEND_ITEM_BT = op.APPEND_ITEM.charCodeAt(0);
     op.SET_RANGE_BT = op.SET_RANGE.charCodeAt(0);
+    op.SET_LENGTH_BT = op.SET_LENGTH.charCodeAt(0);
+    op.START_DBL_BUFFER_BT = op.START_DBL_BUFFER.charCodeAt(0);
+    op.END_DBL_BUFFER_BT = op.END_DBL_BUFFER.charCodeAt(0);
+    op.REQUEST_ADMIN_BT = op.REQUEST_ADMIN.charCodeAt(0);
+    op.LEAVE_ADMIN_BT = op.LEAVE_ADMIN.charCodeAt(0);
+    op.VALIDATE_HASH_REQ_BT = op.VALIDATE_HASH_REQ.charCodeAt(0);
+    op.VALIDATE_HASH_RESP_BT = op.VALIDATE_HASH_RESP.charCodeAt(0);
     return op;
 }
 
@@ -40,17 +54,56 @@ function SYNCHRONIZR_OPCODES() {
  */
 class Synchronizr {
     CONSTANTS() {
-        var t = this;
-        t.op = SYNCHRONIZR_OPCODES();
+        this.op = SYNCHRONIZR_OPCODES();
     }
 
     constructor() {
         var t = this;
         t.CONSTANTS();
+        t.remoteState = { staticData: [], dynamicData: [], eventData: [] };
+        t.isAdmin = false;
         t.setLocalData([], [], []);
         // t.setLocalDataClasses(null, null, null);
         t.setChannel(null);
         // t.setEventId(null);
+        t.isAdmin = false;
+
+        t.txTimer = null;
+        t.autoSend = true; // If true, auto-send data on a timer if necessary
+    }
+    end() {
+        stopTimer();
+    }
+
+    setAdmin(adm) {
+        var t = this;
+        if (t.isAdmin != adm) {
+            t.isAdmin = adm;
+            if (adm) {
+                t.channel.write(t.op.REQUEST_ADMIN + t.getCredential());
+            } else {
+                t.channel.write(t.op.LEAVE_ADMIN);
+            }
+        }
+    }
+
+    getCredential(){
+        return "\x00\x06KJ7SDL\x00\x08password";
+    }
+
+    startTxTimer() {
+        var t = this;
+        if (!t.txTimer)
+            t.txTimer = setInterval(function () {
+                if (t.pushToTarget(t.txTimerBytes))
+                    stopTxTimer();
+            }, 100);
+    }
+    stopTxTimer() {
+        var t = this;
+        if (t.txTimer)
+            clearInterval(t.txTimer);
+        t.txTimer = null;
     }
 
     // Set the ReliableChannel to use
@@ -80,7 +133,11 @@ class Synchronizr {
         var t = this;
         if (t.setEventIdPending) { // Set event ID if pending
             t.setEventIdPending = false;
-            t.channel.write(t.op.SET_ID + t.toStr(t.eventId == null ? "" : t.eventId) + t.op.BEGIN_SYNC);
+            t.setEventId(t.eventId, t.isAdmin);
+        }
+        if (t.hashValidationPending) { // Perform hash validation if pending
+            t.hashValidationPending = false;
+            t.beginHashValidation(true);
         }
     }
 
@@ -91,7 +148,7 @@ class Synchronizr {
         this.eventData = e;
     }
 
-    reconnect(){
+    reconnect() {
         this.channel.reconnect();
     }
 
@@ -108,14 +165,27 @@ class Synchronizr {
     }
 
 
-    // Set the eventID to use (or NULL for a list) and begin synchronization
-    setEventId(id) {
+    /**
+     * Set the event to listen to. If null, a list of events will be requested
+     * @param {String} id 
+     * @param {Boolean} isAdmin If true, connect as an administrator instead of a guest
+     */
+    setEventId(id, isAdmin) {
         var t = this;
         t.eventId = id;
+        t.isAdmin = isAdmin;
         if (!t.channel || !t.channel.isConnected())
             t.setEventIdPending = true;
-        else
-            t.channel.write(t.op.SET_ID + t.toStr(id == null ? "" : id) + t.op.BEGIN_SYNC);
+        else{
+            if(isAdmin){
+                t.channel.write(
+                    t.op.SET_ID + 
+                    t.toStr(id == null ? "" : id) + 
+                    t.op.REQUEST_ADMIN + t.getCredential());
+            } else {
+                t.channel.write(t.op.SET_ID + t.toStr(id == null ? "" : id) + t.op.BEGIN_SYNC);
+            }
+        }
     }
 
     // State parsing
@@ -127,22 +197,29 @@ class Synchronizr {
         this.parseBytecode(buf);
     }
     parseBytecode(arr) {
-        var ptr = 0, t = this, curArr, curASym, curCls;
+        var ptr = 0, t = this, curArr, curASym, curCls, curRemArr;
         var change = { "S": false, "D": false, "E": false };
         while (ptr < arr.length) {
             var op = arr[ptr++];
             var opc = String.fromCharCode(op);
+            var r = t.remoteState;
             switch (op) {
+                case t.op.VALIDATE_HASH_RESP_BT:
+                    var hRes = arr[ptr++]; // Hash comparison result. 1 byte res, 16 byte id
+                    var hId = Synchronizr.byteArrToStr(arr.subarray(ptr, ptr += 16));
+                    t.finishHashValidation(hRes, hId);
+                    break;
                 case t.op.CLEAR_ALL_BT:
                     t.staticData.length = 0; t.dynamicData.length = 0; t.eventData.length = 0;
+                    r.staticData.length = 0; r.dynamicData.length = 0; r.eventData.length = 0;
                     change["S"] = true; change["D"] = true; change["E"] = true;
                     break;
                 case t.op.SELECT_STATIC_BT:
-                    curArr = t.staticData; curASym = 'S'; break;
+                    curArr = t.staticData; curASym = 'S'; curRemArr = r.staticData; break;
                 case t.op.SELECT_DYNAMIC_BT:
-                    curArr = t.dynamicData; curASym = 'D'; break;
+                    curArr = t.dynamicData; curASym = 'D'; curRemArr = r.dynamicData; break;
                 case t.op.SELECT_EVENT_BT:
-                    curArr = t.eventData; curASym = 'E'; break;
+                    curArr = t.eventData; curASym = 'E'; curRemArr = r.eventData; break;
                 case t.op.APPEND_ITEM_BT:
                     var len = arr[ptr++] * 255 + arr[ptr++];
                     var idx = curArr.length;
@@ -150,6 +227,7 @@ class Synchronizr {
                     if (change[curASym] !== true)
                         change[curASym]++;
                     curArr[idx] = subArr;
+                    curRemArr[idx] = subArr; // TODO might need to copy array. Probably not
                     break;
                 case t.op.SET_ITEM_BT:
                     var idx = arr[ptr++] * 255 + arr[ptr++];
@@ -165,15 +243,320 @@ class Synchronizr {
                         change[curASym] = true;
                     }
                     curArr[idx] = subArr;
+                    curRemArr[idx] = subArr;
                     break;
             }
         }
-        t.updateTarget(change['S'], change['D'], change['E']);
+        if(change['S'] || change['D'] || change['E'])
+            t.updateTargetAndStorage(change['S'], change['D'], change['E']);
     }
 
-    updateTarget(sChange, dChange, eChange){
+    updateTargetAndStorage(sChange, dChange, eChange) {
+        this.updateTarget(sChange, dChange, eChange);
+        this.updateStorage(this.eventId, sChange, dChange, eChange);
+    }
+    updateStorage(eventId, sChange, dChange, eChange) {
+        var t = this;
+        if (sChange) { t.updateStorage0(eventId + "-s", t.staticData, sChange); }
+        if (dChange) { t.updateStorage0(eventId + "-d", t.dynamicData, dChange); }
+        if (eChange) { t.updateStorage0(eventId + "-e", t.eventData, eChange); }
+    }
+
+    /**
+     * Loads an event from storage, and then optionally reloads the target via updateTarget()
+     * @param {String} eventId 
+     * @param {Boolean} updateTarget True to update target. If omitted, defaults to true
+     */
+    loadFromStorage(eventId, updateTarget){
+        var t = this;
+        t.staticData = t.loadFromStorage0(eventId + "-s");
+        t.dynamicData = t.loadFromStorage0(eventId + "-d");
+        t.eventData = t.loadFromStorage0(eventId + "-e");
+        if(updateTarget != false)
+            t.updateTarget(true, true, true);
+    }
+    /**
+     * Save an array to local storage.
+     * Array will be sharded into a series of chunks named {key}-0, {key}-1, etc.
+     * @param {String} key 
+     * @param {Array<Uint8Array>} arr 
+     * @param {*} chg 
+     */
+    updateStorage0(key, arr, chg) {
+        var t = this;
+        var lim = 1024; // Bytes per entry
+        var shardNum = 0;
+        var shardArr = [];
+        var shardPtr = 0;
+        for (var x = 0; x < arr.length; x++) {
+            var itm = arr[x];
+            var len = itm.length;
+            if (shardArr.length > 0 && len + shardArr.length + 2 > lim) {
+                localStorage.setItem(key + shardNum++, Synchronizr.byteArrToStr(shardArr));
+                shardArr.length = 0;
+                shardPtr = 0;
+            }
+            shardArr[shardPtr++] = len >> 8;
+            shardArr[shardPtr++] = len & 0xFF;
+            Synchronizr.memcpy(shardArr, itm, shardPtr, len);
+            shardPtr += len;
+            // console.log(arr[x]);
+        }
+        if (shardArr.length > 0) {
+            localStorage.setItem(key + shardNum++, Synchronizr.byteArrToStr(shardArr));
+        }
+        while(1){
+            if(!localStorage.getItem(key + shardNum))
+                break;
+            localStorage.removeItem(key + shardNum++);
+        }
+        // console.log(key, arr, chg);
+    }
+    /**
+     * Load and return an array from local storage
+     * @param {String} key
+     */
+    loadFromStorage0(key){
+        var shardNum = 0;
+        var rtn = [];
+        while(1){
+            var shard = localStorage.getItem(key + shardNum++);
+            if(!shard) break;
+            var shardPtr = 0;
+            while(shardPtr < shard.length){
+                var len = shard.charCodeAt(shardPtr++) + shard.charCodeAt(shardPtr++);
+                var arr = new Uint8Array(len);
+                for(var x = 0; x < len; x++){
+                    arr[x] = shard.charCodeAt(shardPtr++);
+                }
+                rtn.push(arr);
+            }
+        }
+        return rtn;
+    }
+
+    /**
+     * Begin the process of hash validation with the server. If hash validation fails,
+     * failing parts will be force-updated from the client to the server.
+     * You should only call this function if you are admin.
+     * If not connected, hash validation will start when the connection opens
+     */
+    beginHashValidation(noUpdate){
+        var t = this;
+        assert(t.isAdmin, "Must be admin for beginHashValidation");
+        if(!noUpdate){
+            t._hv_sh = t.getHash(t.staticData).substring(0, 16);
+            t._hv_dh = t.getHash(t.dynamicData).substring(0, 16);
+            t._hv_eh = t.getHash(t.eventData).substring(0, 16);
+            t._hv_id = t.getHash(Math.random()).substring(0, 16);
+        }
+        if (!t.channel || !t.channel.isConnected())
+            t.hashValidationPending = true;
+        else {
+            t.channel.write(t.op.VALIDATE_HASH_REQ + t._hv_sh + t._hv_dh + t._hv_eh + t._hv_id);
+        }
+    }
+    /**
+     * Called by parseBytecode() when a hash validation response packet is received.
+     * Updates the [static, dynamic, event] data if it doesn't match.
+     * @param {Byte} flags Byte with highest bits set for [static, dynamic, event] data match
+     * @param {String} id To ensure that the received packet came from the last sent one
+     */
+    finishHashValidation(flags, id){
+        var t = this;
+        if(id != t._hv_id)
+            return;
+        var r = t.remoteState;
+        var sSame = (flags & 128) > 0;
+        var dSame = (flags & 64) > 0;
+        var eSame = (flags & 32) > 0;
+        if(!sSame) r.staticData.length = 0;
+        else r.staticData = [...t.staticData];
+        if(!dSame) r.dynamicData.length = 0;
+        else r.dynamicData = [...t.dynamicData];
+        if(!eSame) r.eventData.length = 0;
+        else r.eventData = [...t.eventData];
+        t.pushToTarget(0);
+    }
+    getHash(arr){
+        var all = [];
+        for(var x = 0; x < arr.length; x++){
+            for(var y = 0; y < arr[x].length; y++){
+                all.push(arr[x][y]);
+            }
+            all.push(0);
+        }
+        return md5(Synchronizr.byteArrToStr(all));
+    }
+
+    updateTarget(sChange, dChange, eChange) {
         var t = this;
         t.updCbFn(sChange, dChange, eChange, t.staticData, t.dynamicData, t.eventData);
+    }
+
+    /**
+     * Update internal state to match state of an object (such as a GameModel).
+     * Also saves state to LocalStorage
+     * @param {Object} model Object that implements the Synchronizr Compatibility interface
+     */
+    updateFromModel(model) {
+        var t = this,  si = false, di = false, ei = false;
+        if (model.isStaticInvalid()) {
+            si = true;
+            t.mergeArrs(t.staticData, model.getStaticData());
+            model.revalidateStatic();
+        }
+        if (model.isEventInvalid()) {
+            ei = true;
+            t.mergeArrs(t.eventData, model.getEventData());
+            model.revalidateEvent();
+        }
+        if (model.isDynamicInvalid()) {
+            di = true;
+            t.mergeArrs(t.dynamicData, model.getDynamicData());
+            model.revalidateDynamic();
+        }
+        t.updateStorage(t.eventId, si, di, ei);
+    }
+    mergeArrs(dest, src) {
+        for (var x = 0; x < src.length; x++) {
+            if (src[x] != null)
+                dest[x] = src[x];
+        }
+    }
+
+    /**
+     * Push the difference between this and the simulated target up the channel.
+     * If auto-send is enabled (default), additional chunks will be sent automatically
+     * @param {Integer} limBytes Max number of bytes soft-allowed to send.
+     *      If omitted it will be strategically chosen. If zero, it means infinity.
+     * @returns {Boolean} true if the synchronization is complete, false if the
+     *      synchronization needs to send more, null if the channel is full
+     */
+    pushToTarget(limBytes) {
+        var t = this;
+        if (!t.channel.canWrite())
+            return null;
+        if (limBytes == null)
+            limBytes = t.channel.canWrite();
+        var x = t.generateBytecode(t.remoteState, limBytes);
+        var dirty = x[0];
+        var msg = x[1];
+        t.channel.write(Synchronizr.byteArrToStr(msg));
+        if (t.autoSend && dirty) {
+            t.txTimerBytes = limBytes;
+            t.startTxTimer();
+        }
+        return !dirty;
+    }
+
+    // State unparsing
+    /**
+     * Generate bytecode to bring another state in sync with this Synchronizr
+     * @param {Object} otherState Simulated state of other end, gets modified during call
+     * @param {Integer} limBytes Max number of bytes soft-allowed to send. If omitted or zero, it means infinity.
+     * @returns a Tuple of (SyncDirty, Bytecode)
+     */
+    generateBytecode(otherState, limBytes) {
+        var o = otherState;
+        var t = this;
+        var rtn = [];
+        var sLen = o.staticData.length;
+        var dLen = o.dynamicData.length;
+        var eLen = o.eventData.length;
+        var x = t._generateBytecode0(t.staticData, o.staticData, limBytes, rtn.length);
+        var db1 = x[0], sDiff = x[1];
+        if (sDiff.length) {
+            rtn.push(t.op.SELECT_STATIC_BT);
+            if(sLen == 0)
+                rtn.push(t.op.SET_LENGTH_BT, 0, 0);
+            rtn = rtn.concat(sDiff);
+        }
+        x = t._generateBytecode0(t.eventData, o.eventData, limBytes, rtn.length);
+        var db2 = x[0], eDiff = x[1];
+        if (eDiff.length) {
+            rtn.push(t.op.SELECT_EVENT_BT);
+            if(eLen == 0)
+                rtn.push(t.op.SET_LENGTH_BT, 0, 0);
+            rtn = rtn.concat(eDiff);
+        }
+        x = t._generateBytecode0(t.dynamicData, o.dynamicData, limBytes, rtn.length);
+        var db3 = x[0], dDiff = x[1];
+        if (dDiff.length) {
+            rtn.push(t.op.SELECT_DYNAMIC_BT);
+            if(dLen == 0)
+                rtn.push(t.op.SET_LENGTH_BT, 0, 0);
+            rtn = rtn.concat(dDiff);
+        }
+        return [db1 || db2 || db3, rtn];
+    }
+
+    /**
+     * Generate bytecode for the difference on one corresponding array
+     * @param {Array} data Synchronizr Data array (typically Static, Dynamic, or Event)
+     * @param {Array} otherData Synchronizr Data array that represents target
+     * @param {Integer} limBytes Max number of bytes soft-allowed to send
+     * @param {Integer} usedBytes Bytes already consumed
+     * @returns a Tuple of (SyncDirty, Bytecode)
+     */
+    _generateBytecode0(data, otherData, limBytes, usedBytes) {
+        var t = this;
+        var rtn = [];
+        var dirtyBreak = false;
+        for (var x = 0; x < data.length; x++) {
+            var datum = data[x];
+            var oDatum = otherData[x];
+            var len = datum.length;
+            if (t._arreq(datum, oDatum)) continue;
+            if (x == otherData.length) { // Append
+                if (!t._genBChk(usedBytes + rtn.length, 3 + len, limBytes)) {
+                    dirtyBreak = true;
+                    break;
+                }
+                rtn.push(t.op.APPEND_ITEM_BT);
+                rtn.push((len >> 8));
+                rtn.push((len & 0xFF));
+                for (var i = 0; i < len; i++)
+                    rtn.push(datum[i]);
+                otherData[x] = datum;
+            } else { // Set item
+                if (!t._genBChk(usedBytes + rtn.length, 5 + len, limBytes)) {
+                    dirtyBreak = true;
+                    break;
+                }
+                rtn.push(t.op.SET_ITEM_BT);
+                rtn.push((x >> 8));
+                rtn.push((x & 0xFF));
+                rtn.push((len >> 8));
+                rtn.push((len & 0xFF));
+                for (var i = 0; i < len; i++)
+                    rtn.push(datum[i]);
+                otherData[x] = datum;
+            }
+        }
+        if (!dirtyBreak && otherData.length != data.length) {
+            rtn += t.op.SET_LENGTH_BT;
+            rtn += (data.length >> 8);
+            rtn += (data.length & 0xFF);
+        }
+        return [dirtyBreak, rtn];
+    }
+    _arreq(arr1, arr2) {
+        if (arr1 == null && arr2 == null)
+            return true;
+        if (arr1 == null || arr2 == null || arr1.length != arr2.length)
+            return false;
+        for (var x = 0; x < arr1.length; x++)
+            if (arr1[x] != arr2[x])
+                return false;
+        return true;
+    }
+    _genBChk(used, alloc, limit) {
+        if (used == 0 || limit == 0)
+            return true;
+        if (used + alloc > limit)
+            return false;
+        return true;
     }
 
 
@@ -185,21 +568,57 @@ class Synchronizr {
         return String.fromCharCode(l >> 8) + String.fromCharCode(l & 0xFF) + s;
     }
 
-    static byteArrToStr(ba){
-        if(!ba) return;
+    static byteArrToStr(ba) {
+        if (!ba) return;
         var rtn = "";
-        for(var x = 0; x < ba.length; x++)
+        for (var x = 0; x < ba.length; x++)
             rtn += String.fromCharCode(ba[x]);
         return rtn;
     }
 
+    static strToByteArr(str) {
+        if (!str) return new Uint8Array(0);
+        var rtn = new Uint8Array(str.length);
+        for (var x = 0; x < str.length; x++)
+            rtn[x] = str.charCodeAt(x);
+        return rtn;
+    }
+
+    static joinArrs(arrs) {
+        var len = 0;
+        for (var x = 0; x < arrs.length; x++)
+            len += (arrs[x].length + 2);
+        var rtn = new Uint8Array(len);
+        len = 0;
+        for (var x = 0; x < arrs.length; x++) {
+            var llen = arrs[x].length;
+            rtn[len++] = llen >> 8;
+            rtn[len++] = llen & 0xFF;
+            for (var i = 0; i < llen; i++)
+                rtn[len++] = arrs[x][i];
+        }
+        return rtn;
+    }
+
+    /**
+     * Implementation (sort of) of std::memcpy()
+     * @param {Array} dest Destination array
+     * @param {Array} src Source array
+     * @param {Integer} start Offset
+     * @param {Integer} sz Length
+     */
+    static memcpy(dest, src, start, sz) {
+        for (var x = 0; x < sz; x++)
+            dest[start + x] = src[x];
+    }
+
     // Parse a field from a Uint8Array of Bytecode, given a by-reference pointer (ptra)
-    static parseField(haystack, ptra){
+    static parseField(haystack, ptra) {
         var ptr = ptra[0];
         var len = haystack[ptr++] * 256 + haystack[ptr++] & 0xFF;
         ptr += len;
         ptra[0] = ptr;
-        return haystack.subarray(ptr-len, ptr);
+        return haystack.subarray(ptr - len, ptr);
     }
 }
 

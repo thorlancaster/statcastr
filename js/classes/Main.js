@@ -7,20 +7,24 @@ class Main{
         t.MOBILE_WIDTH = 780; // If narrower, mobile layout is used
         t.mobile = (window.innerWidth < t.MOBILE_WIDTH);
         // ToastSetRoot(APP_ROOT);
-        var eventId = new URL(location.href).searchParams.get("event");
+        var params = new URL(location.href).searchParams;
+        var eventId = params.get("event");
+        var isAdmin = params.get("admin") == "true";
         var s = new Synchronizr();
-        t.sc = new StatcastrApp(DGE(APP_ROOT), s, eventId);
+        t.sc = new StatcastrApp(DGE(APP_ROOT), s, eventId, isAdmin);
         // s.setLocalData(t.sc.getStaticData(), t.sc.getDynamicData(), t.sc.getEventData());
         // s.setLocalDataClasses(t.sc.getStaticDataClass(), t.sc.getDynamicDataClass(), t.sc.getEventDataClass());
         s.setUpdateCallback(t.sc.onSynchronizrUpdate.bind(t.sc));
 
         t.channel = new WebsocketReliableChannel();
+        // t.channel.setTarget("ws://172.105.151.207", 1234);
         t.channel.setTarget("ws://localhost", 1234);
         s.setChannel(t.channel);
         t.channel.connect();
         console.log("SynchronizrMain: Channel started");
         window.CHANNEL = t.channel;
         window.SC  = t.sc;
+        window.SYN = s;
     }
 
     onResize(){
@@ -29,6 +33,9 @@ class Main{
         t.sc.onResize();
     }
 
+    onKey(e){
+        this.sc.onKey(e);
+    }
 
     u8ToB64(ba){
         var str = "";

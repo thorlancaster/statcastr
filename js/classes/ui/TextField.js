@@ -7,6 +7,12 @@ class TextField extends UIPanel{
         else this.setText(txt);
       }
     }
+    getHtml(){
+      return this.element.innerHTML;
+    }
+    getText(){
+      return this.element.textContent;
+    }
     setText(txt){
       this.element.textContent = txt; return this;}
     setHtml(html){

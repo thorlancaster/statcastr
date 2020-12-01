@@ -11,6 +11,7 @@ class Dialog{
         t.box = new UIPanel().addClass("dialogBox")
             .setStyle("minWidth", "16em")
             .setStyle("minHeight", "8em")
+            .setStyle("maxHeight",  "95%")
             .setStyle("background", "var(--main-bg2)")
             .setStyle("position", "absolute")
             .setStyle("flex-direction", "column");
@@ -25,9 +26,13 @@ class Dialog{
             .setBgColor("#F00").setBorder("0px");
         t.titleHolder.appendChild(t.closeBtn);
         t.box.appendChild(t.titleHolder);
-        t.body = new UIPanel().setStyle("overflow", "auto")
-            .setStyle("padding", "0.5em").setStyle("flexDirection", "column");
-        t.box.appendChild(t.body);
+        t.body = new UIPanel().setStyle("overflow", "visible")
+            .setStyle("padding", "0.5em").setStyle("flexDirection", "column")
+            .setStyle("height", "-moz-fit-content").setStyle("height", "fit-content")
+            .setStyle("height", "-webkit-fit-content");
+        var hldr = new UIPanel().setStyle("overflow", "auto");
+        hldr.appendChild(t.body);
+        t.box.appendChild(hldr);
 
         t.closeBtn.addClickListener(function(){
             t.close();
@@ -58,6 +63,9 @@ class Dialog{
         setTimeout(function(){
             t.panel.element.parentElement.removeChild(t.panel.element);
         }, 150);
+    }
+    static isOpen(){
+        return document.getElementsByClassName("dialogBox").length;
     }
     static removeById(str){
         // console.log("RemoveDlg" + str);

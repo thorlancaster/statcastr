@@ -13,17 +13,20 @@ class StatcastrApp{
    * @param {Element} appRootEl Root element to place app in
    * @param {Synchronizr} synchronizr Synchronizr instance
    * @param {String} eventId Id of event to listen to. Can be null
+   * @param {Boolean} isAdmin True for admin mode, false for spectator mode
    */
-  constructor(appRootEl, synchronizr, eventId){
+  constructor(appRootEl, synchronizr, eventId, isAdmin){
     var t = this;
     assert(appRootEl != null, "App Root Element is required")
     assert(synchronizr != null, "Synchronizr is required")
     t.appRoot = appRootEl;
-    t.synchronizr = synchronizr;
+    t.synchronizrPtr = [];
+    t.setSynchronizr(synchronizr);
     t.appRoot.classList.add("appRoot");
     t.views = [];
     t.NULL_VIEW = new NullView();
     t.eventId = eventId;
+    t.isAdmin = isAdmin;
 
     t.viewSelector = t.createViewSelector();
     t.viewSelector.addSelectionListener(function(sel){t.onViewSelected(sel)});
@@ -44,14 +47,21 @@ class StatcastrApp{
     t.generateView("playByPlay", new PlayByPlayView(t.model));
     t.generateView("teamStats", new TeamStatsView(t.model, true));
     t.generateView("opponentStats", new TeamStatsView(t.model, false));
-    t.generateView("admin", new AdminView(t.model));
-    t.setView("scoreboard");
+    t.generateView("admin", new AdminView(t.model, t.synchronizrPtr, t.onAdminScoreboardUpdate.bind(t)));
+    // t.setView("scoreboard");
+    t.setView("admin");
     t.update();
     if(eventId == null) // If no event is selected, ask the user to choose one
       t.onViewSelected("eventList");
     else{
-      t.synchronizr.setEventId(eventId); // Otherwise, begin syncing to the current event
-      t.showMainDialog("loadingStatsFeed", "Event Id: " + eventId);
+      t.synchronizr.setEventId(eventId, isAdmin); // Otherwise, begin syncing to the current event
+      if(isAdmin) // Admin must manually pull stats if they want to, otherwise they just push
+        setTimeout(function(){
+          synchronizr.loadFromStorage(eventId);
+          synchronizr.beginHashValidation();
+        }, 0);
+      else // Fans must wait for the feed to load
+        t.showMainDialog("loadingStatsFeed", "Event Id: " + eventId);
     }
 
     // Allow the page to render before finishing
@@ -68,12 +78,24 @@ class StatcastrApp{
 
   setSynchronizr(s){
     this.synchronizr = s;
+    this.synchronizrPtr[0] = s;
   }
 
   onGesture(obj){
     var v = this.getSelectedView();
     if(v.onGesture)
       v.onGesture(obj);
+  }
+
+  onKey(e){
+    if(e.repeat)
+      return;
+    if(Dialog.isOpen())
+      return;
+    var v = this.getSelectedView();
+    var k = e.key.length > 1 ? e.key.toLowerCase() : e.key;
+    if(v.onKey)
+      v.onKey(k, e.type == "keydown");
   }
 
   testPerfPBPReload(){
@@ -102,9 +124,12 @@ class StatcastrApp{
     vs.setStyle("flexShrink", "0");
     vs.setStyles("top", "left", "0px");
     vs.addIcon("favicon.ico");
+    vs.addIcon("favicon.ico");
+    vs.addIcon("favicon.ico");
     vs.addTab("<u>E</u>VENTS", "eventList", true);
     vs.addTab("<u>S</u>COREBOARD", "scoreboard");
     vs.addTab("SPLIT&nbsp;<u>B</u>OX", "splitBox");
+    vs.addIcon("favicon.ico");
     vs.addTab("<u>T</u>EAM STATS", "teamStats");
     vs.addTab("<u>O</u>PPONENT STATS", "opponentStats");
     vs.addTab("<u>P</u>LAY-BY-PLAY", "playByPlay");
@@ -208,6 +233,8 @@ class StatcastrApp{
     else console.warn("Unsupported ShowMainDialog " + dlg);
   }
 
+  // Update the event selection table in the event selection dialog,
+  // given a response from Synchronizr
   updateEvtSelTbl(arr){
     var t = this;
     if(!t.evtSelDlg) return;
@@ -277,18 +304,28 @@ class StatcastrApp{
     return this.NULL_VIEW;
   }
 
+  onAdminScoreboardUpdate(){
+    this.update();
+  }
   update(){
     this.getSelectedView().update();
   }
 
   onResize(){
     var t = this;
-    if(MAIN.mobile)
+    var m = MAIN.mobile;
+    if(m)
       t.appRoot.classList.add("mobile");
     else
      t.appRoot.classList.remove("mobile");
 
     t.getSelectedView().resize();
+    if(m != t._mobile){
+      // Some elements need resize()d twice when mobile changes as well
+      t._mobile = m;
+      t.getSelectedView().resize();
+    }
+
     t.viewSelector.resize();
   }
 

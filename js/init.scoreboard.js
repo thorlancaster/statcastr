@@ -15,6 +15,7 @@ class Initializer {
     // SCRIPTS
     // Dependencies
     l.loadScript("js/libs/utils.js");
+    l.loadScript("js/classes/MD5.js");
     // Model
     l.loadScript("js/classes/model/GameModel.js");
     l.loadScript("js/classes/model/basketball/BasketballGameModel.js");
@@ -73,8 +74,8 @@ class Initializer {
     window.addEventListener("resize", function(e){if(MAIN.onResize) MAIN.onResize(e);});
     window.addEventListener("focus", function(e){if(MAIN.onFocus) MAIN.onFocus(e);});
     window.addEventListener("blur", function(e){if(MAIN.onBlur) MAIN.onBlur(e);});
-    window.addEventListener("keydown", function(e){if(MAIN.keyDown) MAIN.keyDown(e);});
-    window.addEventListener("keyup", function(e){if(MAIN.keyUp) MAIN.keyUp(e);});
+    window.addEventListener("keydown", function(e){if(MAIN.onKey) MAIN.onKey(e);});
+    window.addEventListener("keyup", function(e){if(MAIN.onKey) MAIN.onKey(e);});
   }
 
   run(){

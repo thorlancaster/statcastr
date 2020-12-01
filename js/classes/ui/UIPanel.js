@@ -1,7 +1,6 @@
 class UIPanel{
   constructor(){
     this.element = DCE("div", "uiPanel");
-    this.element._dbgobj = this;
     this.children = [];
   }
 
@@ -16,6 +15,17 @@ class UIPanel{
     return this;
   }
 
+  prependChild(el){
+    if(el instanceof UIPanel){
+      this.element.prepend(el.element);
+      if(!this.children.includes(el))
+        this.children.unshift(el);
+    }
+    else
+      this.element.prepend(el);
+    return this;
+  }
+
   removeChild(el){
     if(el instanceof UIPanel){
       this.element.removeChild(el.element);
@@ -26,6 +36,14 @@ class UIPanel{
     else
       this.element.appendChild(el);
     return this;
+  }
+
+  removeAll(){
+    this.children.length = 0;
+    var e = this.element;
+    while(e.firstChild){
+      e.firstChild.remove();
+    }
   }
 
   /**
@@ -89,6 +107,9 @@ class UIPanel{
     this.element.classList.add(name); return this;}
   removeClass(name){
     this.element.classList.remove(name); return this;}
+  hasClass(name){
+    return this.element.classList.contains(name);
+  }
 
   hide(){this.setStyle("display", "none");}
   show(){this.setStyle("display", null);}
