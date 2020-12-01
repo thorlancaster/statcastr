@@ -19,6 +19,7 @@ class AdminViewDisplay extends ViewDisplay {
 
 	// update() {
 	// 	super.update();
+	// 	this.wdg.updateCkBtnSelState();
 	// }
 
 	onKey(char, down) {
@@ -44,9 +45,9 @@ class AdminWidget extends UIPanel {
 		t.addClass("adminWidget");
 		t.setStyle("flexDirection", "column");
 		t.setStyle("fontSize", "1.3em");
-		t.element.style.setProperty("--btnh", "3em");
+		t.element.style.setProperty("--btnh", "2em");
 		// PDT - PBP display table for viewing recent plays
-		t.pdt = new PBPDisplayTable(4);
+		t.pdt = new PBPDisplayTable(3);
 		t.pdt.table.enableClickListener(t.onPDTClick.bind(t));
 		t.pdt.setStyle("fontSize", "0.769em");
 		t.pdt.setStyle("lineHeight", "1.5em");
@@ -112,6 +113,15 @@ class AdminWidget extends UIPanel {
 		t.subBtn = t.createBtn('SU<u>B</u>', true); t.actSel.appendChild(t.subBtn);
 		ab.push(t.rbBtn, t.stlBtn, t.toBtn, t.chBtn, t.subBtn);
 		t.appendChild(t.actSel);
+		// Action Selection panel 2 - Select other action or game management
+		t.actSel2 = new UIPanel();
+		t.delBtn = t.createBtn("DEL"); t.actSel2.appendChild(t.delBtn);
+		t.repBtn = t.createBtn("REP"); t.actSel2.appendChild(t.repBtn);
+		t.xxBtn2 = t.createBtn("--"); t.actSel2.appendChild(t.xxBtn2);
+		t.xxBtn3 = t.createBtn("--"); t.actSel2.appendChild(t.xxBtn3);
+		t.xxBtn4 = t.createBtn("--"); t.actSel2.appendChild(t.xxBtn4);
+		ab.push(t.delBtn, t.repBtn, t.xxBtn2, t.xxBtn3, t.xxBtn4);
+		t.appendChild(t.actSel2);
 
 		t.p1Btn.addClickListener(function () { t.onPlayX(1); });
 		t.p2Btn.addClickListener(function () { t.onPlayX(2); });
@@ -126,6 +136,9 @@ class AdminWidget extends UIPanel {
 		t.chBtn.addClickListener(function () { t.onPlayX('charge'); });
 		t.subBtn.addClickListener(t.onSubX.bind(t));
 
+		t.delBtn.addClickListener(t.onDelX.bind(t));
+		t.repBtn.addClickListener(t.onReplaceX.bind(t));
+
 		t.setEntryBusy(false);
 		// setTimeout(function () {
 		// 	t.onGameRosBtn(); // TODO XXX debug
@@ -138,6 +151,7 @@ class AdminWidget extends UIPanel {
 		super.update();
 		var t = this;
 		t.pdt.setStateFromModel(t.model);
+		t.updateCkBtnSelState();
 	}
 
 	vibrate(pattern) {
@@ -172,13 +186,13 @@ class AdminWidget extends UIPanel {
 			if ((obj.touches == 1 && obj.taps == 0) || (obj.touches == 2 && obj.taps != 0)) {
 				// Tap number entry
 				if (obj.taps <= 5) {
-					console.log("NBR " + obj.taps);
+					// console.log("NBR " + obj.taps);
 					t.onNumberX(obj.taps);
 				}
 			}
 			else { // Multi-fingered number entry for numbers >= 2
 				if (obj.touches <= 5) {
-					console.log("NBR " + obj.touches);
+					// console.log("NBR " + obj.touches);
 					t.onNumberX(obj.touches);
 				}
 			}
@@ -209,6 +223,9 @@ class AdminWidget extends UIPanel {
 				if (obj.touches == 1) { // Messy multi-finger taps can be mistakenly counted as swipes
 					if (obj.direction.includes("down")) {
 						t.onExpandAction();
+					}
+					else if (obj.direction.includes("up")) {
+						t.onToggleMade();
 					}
 					else if (obj.direction.includes("left")) {// Cancel action
 						t.onBackAction();
@@ -271,8 +288,176 @@ class AdminWidget extends UIPanel {
 			var abbr = team ? team.abbr : "";
 			t.playReplacementLbl.setText("Replacing @[" + ifo.time + "]");
 		}
-		new Toast("PDT clicked " + rowNum);
 	}
+
+	onCommitNewPlay() {
+		// Commit new current play to game state.
+		// This will also result in the play getting sent down the pipe.
+		var t = this;
+		if (!t.selPlayers || t.selPlayers.length == 0) {
+			new Toast("No Players Selected");
+			t.vibrate(t.VIBE_FAILURE);
+			return;
+		}
+		else if (t.selPlayers.length > 1) {
+			new Toast("Multiple Players Selected");
+			t.vibrate(t.VIBE_FAILURE);
+			return;
+		}
+		var playType = null;
+		var bpt = BasketballPlayType;
+		var made = this.lastPlayMade;
+		switch (t.lastPlaySelection) {
+			case "1": playType = made ? bpt.FT_MADE : bpt.FT_MISS; break;
+			case "2": playType = made ? bpt.P2_MADE : bpt.P2_MISS; break;
+			case "3": playType = made ? bpt.P3_MADE : bpt.P3_MISS; break;
+			case "Foul": playType = made ? bpt.FOUL_P : bpt.FOUL_T; break;
+			case "Rebound": playType = bpt.REB_UNK; break;
+			case "Steal": playType = bpt.STEAL; break;
+			case "Turnover": playType = bpt.TURNOVER; break;
+			case "Charge": playType = bpt.CHARGE_TAKEN; break;
+			default:
+				assert(false, "t.lastPlaySelection invalid");
+		}
+		var s = t.getSynchronizr();
+		t.model.pbp.addPlay(new BasketballPBPItem(t.entryPd, t.entryMs, t.selPlayers[0], t.selTeam, playType));
+		t.model.updateFromPBP(); // Update last play in PBP to model
+		t.scoreboardUpdateCb(); // Update the scoreboard
+		t.model.invalidateEvent(1); // Mark 1 event invalidated for Synchronizr
+		s.updateFromModel(t.model); // Have synchronizr update its local state
+		s.pushToTarget(); // Send it down the wire
+		new Toast("Action Submitted: " + BasketballPlayType.toLongStr(playType) + " " + t.selPlayers[0]);
+		t.vibrate(t.VIBE_SUCCESS);
+		t.clearAction();
+	}
+	onExpandAction() {
+		// TODO Expand options for this action, e.g. allow bench players to be chosen for stats.
+		// Actions using expand() may produce multiple PBP plays and should set linked=true on second play
+	}
+	onBackAction() {
+		this.clearAction();
+		this.vibrate(this.VIBE_CANCEL);
+	}
+	clearAction() {
+		var t = this;
+		t.setEntryBusy(false);
+		t.selPlayers = null;
+		t.setPlayerEntry(null);
+		t.playerSelLbl.setText("");
+		t.playerSelNum.setText("");
+		t.playReplacementLbl.setText("");
+		t.playToReplace = null;
+	}
+	onPSWSelect(num2, num1) {
+		// Called when a player selection button is pressed
+		this.onNumberX(num2);
+		this.onNumberX(num1);
+	}
+	onDelX() { // Called when delete button is pressed
+		var t = this;
+		var m = t.model;
+		var d = new ConfirmationDialog("Delete last play?", function () {
+			d.remove();
+			var ms = m.clock.millisLeft, pd = m.clock.period;
+			var s = t.getSynchronizr();
+			m.pbp.removePlay();
+			m.reloadFromPBP(); // Update last play in PBP to model
+			m.clock.period = pd; m.clock.millisLeft = ms; // Save clock so it doesn't change
+			t.scoreboardUpdateCb(); // Update the scoreboard
+			m.invalidateEvent(); // Mark all events invalidated for Synchronizr
+			s.updateFromModel(m); // Have synchronizr update its local state
+			s.pushToTarget(); // Send it down the wire
+			t.vibrate(t.VIBE_SUCCESS);
+			new Toast("Last play deleted");
+		});
+		d.show();
+	}
+	onReplaceX() { // Called when replace button is pressed
+		
+	}
+	onNumberX(num) {
+		// Called when a number gesture happens
+		var t = this;
+		if (!t.entryBusy)
+			return;
+		t.entryNum2 = t.entryNum1;
+		t.entryNum1 = num;
+		t.playerSelNum.setText((t.entryNum2 == null ? "_" : t.entryNum2) + "" + t.entryNum1);
+		t.selPlayers = t.playerSel.setFilter(t.entryNum2, t.entryNum1);
+	}
+	onPlayX(sc) {
+		// Called when a play selection button is pressed or gestured
+		var t = this;
+		if (t.selTeam == null) {
+			t.vibrate(t.VIBE_FAILURE);
+			return;
+		}
+		var lps = null; // Last Play Type
+		var lpm = null; // Last play made?
+		switch (sc) {
+			case 1: lps = "1"; lpm = true; break;
+			case 2: lps = "2"; lpm = true; break;
+			case 3: lps = "3"; lpm = true; break;
+			case "foul": lps = "Foul"; lpm = true; break;
+			case "rebound": lps = "Rebound"; break;
+			case "steal": lps = "Steal"; break;
+			case "turnover": lps = "Turnover"; break;
+			case "charge": lps = "Charge"; break;
+			default: console.warn("Invalid play type for onPlayX: " + sc);
+				return;
+		}
+		var plyrs = t.selTeam ? t.model.team.players : t.model.opp.players;
+		var color = t.selTeam ? "var(--team-color1)" : "var(--opp-color1)";
+		t.setPlayerEntry(plyrs, color, false);
+		t.playerSelNum.setText("__");
+		t.lastPlaySelection = lps;
+		t.lastPlayMade = lpm;
+		t.entryPd = t.model.clock.period;
+		t.entryMs = t.model.clock.millisLeft;
+		t.updatePlayerSelLbl();
+		t.setEntryBusy(true);
+	}
+	updatePlayerSelLbl() {
+		var t = this;
+		var tdesc = t.selTeam ? t.model.team.abbr : t.model.opp.abbr;
+		var lps = t.lastPlaySelection;
+		var mm = t.lastPlayMade == null ? '' : t.lastPlayMade ? " made" : " miss";
+		if (lps == "Foul") mm == t.lastPlayMade ? '' : "TECH";
+		t.playerSelLbl.setHtml('[' + tdesc + ' ' + lps + mm + "]&emsp;Enter Player #");
+	}
+	onToggleMade() {
+		var t = this;
+		if (t.lastPlayMade == true || t.lastPlayMade == false) {
+			this.lastPlayMade = !this.lastPlayMade;
+			new Toast("Made: " + this.lastPlayMade);
+			if (t.lastPlayMade)
+				t.vibrate(t.VIBE_SUCCESS);
+			else
+				t.vibrate(t.VIBE_FAILURE);
+			t.updatePlayerSelLbl();
+		}
+	}
+
+	setPlayerEntry(plyrs, c, b) {
+		// Set the player entry fields with {players, color, includeBench}
+		this.playerSel.setPlayers(plyrs, c, b);
+	}
+	onSubX() {
+		// Called when the player substitution button is pressed
+		console.log("Sub");
+	}
+	onClockX() {
+		// Called when the clock toggle button is pressed
+		// Starts/Stops the clock
+		var t = this;
+		t.model.clock.running = !t.model.clock.running;
+
+		t.updateCkBtnSelState();
+	}
+	updateCkBtnSelState() {
+		this.ckBtn.setSelected(this.model.clock.running);
+	}
+
 
 	onGameRosBtn() {
 		// TODO the underlying entry shouldn't be being manipulated when a dialog is present
@@ -363,10 +548,10 @@ class AdminWidget extends UIPanel {
 			return "Player numbers must be 0-55";
 		if (numSta != 5)
 			return "5 starters per team required";
-		if(pbp){
-			for(var x = 0; x < pbp.plays.length; x++){
+		if (pbp) {
+			for (var x = 0; x < pbp.plays.length; x++) {
 				var p = pbp.plays[x];
-				if(isTeam != null && p.team == isTeam && !ids.includes(p.pid)){
+				if (isTeam != null && p.team == isTeam && !ids.includes(p.pid)) {
 					return "Cannot remove player #" + p.pid + " that has plays";
 				}
 			}
@@ -409,118 +594,6 @@ class AdminWidget extends UIPanel {
 		}
 	}
 
-	onCommitNewPlay() {
-		// Commit new current play to game state.
-		// This will also result in the play getting sent down the pipe.
-		var t = this;
-		if (!t.selPlayers || t.selPlayers.length == 0) {
-			new Toast("No Players Selected");
-			t.vibrate(t.VIBE_FAILURE);
-			return;
-		}
-		else if (t.selPlayers.length > 1) {
-			new Toast("Multiple Players Selected");
-			t.vibrate(t.VIBE_FAILURE);
-			return;
-		}
-		var s = t.getSynchronizr();
-		t.model.pbp.addPlay(new BasketballPBPItem(t.entryPd, t.entryMs, t.selPlayers[0], t.selTeam, t.lastPlaySelection));
-		t.model.updateFromPBP(); // Update last play in PBP to model
-		t.scoreboardUpdateCb(); // Update the scoreboard
-		t.model.invalidateEvent(1); // Mark 1 event invalidated for Synchronizr
-		s.updateFromModel(t.model); // Have synchronizr update its local state
-		s.pushToTarget(); // Send it down the wire
-		new Toast("Action Submitted: " + BasketballPlayType.toLongStr(t.lastPlaySelection) + " " + t.selPlayers[0]);
-		t.vibrate(t.VIBE_SUCCESS);
-		t.clearAction();
-	}
-	onExpandAction() {
-		// TODO Expand options for this action, e.g. allow bench players to be chosen for stats.
-		// Actions using expand() may produce multiple PBP plays and should set linked=true on second play
-	}
-	onBackAction() {
-		this.clearAction();
-		t.vibrate(t.VIBE_CANCEL);
-	}
-	clearAction() {
-		var t = this;
-		t.setEntryBusy(false);
-		t.selPlayers = null;
-		t.setPlayerEntry(null);
-		t.playerSelLbl.setText("");
-		t.playerSelNum.setText("");
-		t.playReplacementLbl.setText("");
-		t.playToReplace = null;
-	}
-	onPSWSelect(num2, num1) {
-		// Called when a player selection button is pressed
-		this.onNumberX(num2);
-		this.onNumberX(num1);
-	}
-	onNumberX(num) {
-		// Called when a number gesture happens
-		var t = this;
-		if (!t.entryBusy)
-			return;
-		t.entryNum2 = t.entryNum1;
-		t.entryNum1 = num;
-		t.playerSelNum.setText((t.entryNum2 == null ? "_" : t.entryNum2) + "" + t.entryNum1);
-		t.selPlayers = t.playerSel.setFilter(t.entryNum2, t.entryNum1);
-	}
-	onPlayX(sc) {
-		// Called when a play selection button is pressed
-		var t = this;
-		if (t.selTeam == null) {
-			t.vibrate(t.VIBE_FAILURE);
-			return;
-		}
-		var tdesc = t.selTeam ? t.model.team.abbr : t.model.opp.abbr;
-		var desc = "?";
-		var lps = null;
-
-		var made = true; // TODO XXX FIXME support makes and misses
-		var bpt = BasketballPlayType;
-		switch (sc) {
-			case 1: desc = "1 point"; lps = made ? bpt.FT_MADE : bpt.FT_MISS; break;
-			case 2: desc = "2 points"; lps = made ? bpt.P2_MADE : bpt.P2_MISS; break;
-			case 3: desc = "3 points"; lps = made ? bpt.P3_MADE : bpt.P3_MISS; break;
-			case "foul": desc = "Foul"; lps = bpt.FOUL_P; break;
-			case "rebound": desc = "rebound"; lps = bpt.REB_UNK; break;
-			case "steal": desc = "steal"; lps = bpt.STEAL; break;
-			case "turnover": desc = "turnover"; lps = bpt.TURNOVER; break;
-			case "charge": desc = "charge"; lps = bpt.CHARGE_TAKEN; break;
-			default: console.warn("Invalid play type for onPlayX: " + sc);
-				return;
-		}
-		var plyrs = t.selTeam ? t.model.team.players : t.model.opp.players;
-		var color = t.selTeam ? "var(--team-color1)" : "var(--opp-color1)";
-		t.setPlayerEntry(plyrs, color, false);
-		t.playerSelLbl.setHtml('[' + tdesc + ' ' + desc + "]&emsp;Enter Player #");
-		t.playerSelNum.setText("__");
-		t.lastPlaySelection = lps;
-		t.entryPd = 1; // TODO XXX FIXME implement these
-		t.entryMs = 100000;
-		t.setEntryBusy(true);
-	}
-
-	setPlayerEntry(plyrs, c, b) {
-		// Set the player entry fields with {players, color, includeBench}
-		this.playerSel.setPlayers(plyrs, c, b);
-	}
-	onSubX() {
-		// Called when the player substitution button is pressed
-		console.log("Sub");
-	}
-	onClockX() {
-		// Called when the clock toggle button is pressed
-		// Starts/Stops the clock
-		var t = this;
-		t.clockRunning = !t.clockRunning;
-		t.updateCkBtnSelState();
-	}
-	updateCkBtnSelState() {
-		this.ckBtn.setSelected(this.clockRunning);
-	}
 	createBtn(txt, useHTML) {
 		return new ButtonField(txt, true, useHTML)
 			.setStyle("height", "var(--btnh)").setStyle("width", "3em");
@@ -576,10 +649,16 @@ class PlayerSelectionWidget extends UIPanel {
 	setFilter(num2, num1) {
 		var t = this;
 		var rtn = [];
+		var nStr = "";
+		if(num2 == 0 && num1 != 0)
+			num2 = null;
+		if(num2 != null) nStr += num2;
+		if(num1 != null) nStr += num1;
 		for (var x = 0; x < t.bptr; x++) {
 			var btn = t.rows[Math.floor(x / 5)].children[x % 5];
 			var txt = btn.getText();
-			if ((!num2 && txt.startsWith(num1)) || (num2 && txt.endsWith(num1) && txt.startsWith(num2) && txt.length == 2)) {
+			// if ((!num2 && txt.startsWith(num1)) || (num2 && txt.endsWith(num1) && txt.startsWith(num2) && txt.length == 2)) {
+			if(txt == nStr){
 				btn.setSelected(true);
 				rtn.push(txt);
 			}

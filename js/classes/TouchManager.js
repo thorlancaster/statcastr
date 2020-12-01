@@ -4,7 +4,7 @@ class TouchManager {
         this.gListeners = [];
         this.T_TOL = 60; // Theta-tolerance for gesture direction (Up, Down, Left, Right);
         this.MIN_TAP_TIME = 60; // Minimum ms between touches to count taps
-        this.MIN_ANG_MOVE = 75; // Minimum dx+dy to count angle movement
+        this.MIN_ANG_MOVE = 55; // Minimum dx+dy to count angle movement
     }
     log(m){
         return false;

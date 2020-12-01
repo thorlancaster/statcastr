@@ -50,6 +50,8 @@ class BasketballPlayByPlay extends PlayByPlay{
     this.plays.push(p);
   }
   removePlay(x){
-    this.plays.remove(x);
+    if(x == null)
+      x = this.plays.length - 1;
+    this.plays.splice(x, 1);
   }
 }

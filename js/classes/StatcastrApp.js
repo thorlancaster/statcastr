@@ -76,6 +76,18 @@ class StatcastrApp{
     window.TOUCH = t.touchManager;
   }
 
+  /**
+   * Call every 100ms or so to tick the clock
+   * If anything changed, updates automatically
+   */
+  tick(){
+    var t = this;
+    var r1 = t.model.tick();
+    if(r1 || false){
+      t.update();
+    }
+  }
+
   setSynchronizr(s){
     this.synchronizr = s;
     this.synchronizrPtr[0] = s;

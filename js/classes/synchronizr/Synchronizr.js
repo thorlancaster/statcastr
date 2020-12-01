@@ -75,6 +75,10 @@ class Synchronizr {
         stopTimer();
     }
 
+    /**
+     * Set whether the client is an admin or not
+     * @param {Boolean} adm 
+     */
     setAdmin(adm) {
         var t = this;
         if (t.isAdmin != adm) {
@@ -87,6 +91,7 @@ class Synchronizr {
         }
     }
 
+    // TODO better credential storage
     getCredential(){
         return "\x00\x06KJ7SDL\x00\x08password";
     }
@@ -197,11 +202,10 @@ class Synchronizr {
         this.parseBytecode(buf);
     }
     parseBytecode(arr) {
-        var ptr = 0, t = this, curArr, curASym, curCls, curRemArr;
+        var ptr = 0, t = this, curArr, curASym, curRemArr;
         var change = { "S": false, "D": false, "E": false };
         while (ptr < arr.length) {
             var op = arr[ptr++];
-            var opc = String.fromCharCode(op);
             var r = t.remoteState;
             switch (op) {
                 case t.op.VALIDATE_HASH_RESP_BT:
@@ -229,11 +233,17 @@ class Synchronizr {
                     curArr[idx] = subArr;
                     curRemArr[idx] = subArr; // TODO might need to copy array. Probably not
                     break;
+                case t.op.SET_LENGTH_BT:
+                    var len = arr[ptr++] * 255 + arr[ptr++];
+                    curArr.length = len;
+                    curRemArr.length = len;
+                    change[curASym] = true;
+                    break;
                 case t.op.SET_ITEM_BT:
                     var idx = arr[ptr++] * 255 + arr[ptr++];
                     var len = arr[ptr++] * 255 + arr[ptr++];
                     var subArr = arr.subarray(ptr, ptr += len);
-                    if (idx == curArr.length) {
+                    if (idx == curArr.length) { // TODO might be a bug here from not doing curRemArr. Probably not.
                         if (change[curASym] !== true)
                             change[curASym]++;
                     }
@@ -245,14 +255,18 @@ class Synchronizr {
                     curArr[idx] = subArr;
                     curRemArr[idx] = subArr;
                     break;
+                case t.op.EOF_BT: // EOF to signal end of sync
+                    break;
+                default:
+                    console.warn("Invalid opcode: " + op);
             }
         }
         if(change['S'] || change['D'] || change['E'])
-            t.updateTargetAndStorage(change['S'], change['D'], change['E']);
+            t.updateLocalAndStorage(change['S'], change['D'], change['E']);
     }
 
-    updateTargetAndStorage(sChange, dChange, eChange) {
-        this.updateTarget(sChange, dChange, eChange);
+    updateLocalAndStorage(sChange, dChange, eChange) {
+        this.updateLocal(sChange, dChange, eChange);
         this.updateStorage(this.eventId, sChange, dChange, eChange);
     }
     updateStorage(eventId, sChange, dChange, eChange) {
@@ -263,17 +277,17 @@ class Synchronizr {
     }
 
     /**
-     * Loads an event from storage, and then optionally reloads the target via updateTarget()
+     * Loads an event from storage, and then optionally reloads the local state via updateLocal()
      * @param {String} eventId 
-     * @param {Boolean} updateTarget True to update target. If omitted, defaults to true
+     * @param {Boolean} updateLocal True to update the local state. If omitted, defaults to true
      */
-    loadFromStorage(eventId, updateTarget){
+    loadFromStorage(eventId, updateLocal){
         var t = this;
         t.staticData = t.loadFromStorage0(eventId + "-s");
         t.dynamicData = t.loadFromStorage0(eventId + "-d");
         t.eventData = t.loadFromStorage0(eventId + "-e");
-        if(updateTarget != false)
-            t.updateTarget(true, true, true);
+        if(updateLocal != false)
+            t.updateLocal(true, true, true);
     }
     /**
      * Save an array to local storage.
@@ -389,7 +403,7 @@ class Synchronizr {
         return md5(Synchronizr.byteArrToStr(all));
     }
 
-    updateTarget(sChange, dChange, eChange) {
+    updateLocal(sChange, dChange, eChange) {
         var t = this;
         t.updCbFn(sChange, dChange, eChange, t.staticData, t.dynamicData, t.eventData);
     }
@@ -423,6 +437,8 @@ class Synchronizr {
             if (src[x] != null)
                 dest[x] = src[x];
         }
+        if(dest.length > src.length)
+            dest.length = src.length;
     }
 
     /**
@@ -435,14 +451,17 @@ class Synchronizr {
      */
     pushToTarget(limBytes) {
         var t = this;
-        if (!t.channel.canWrite())
+        if (!t.channel.canWrite()){
+            new Toast("Can't write, channel full / broken");
             return null;
+        }
         if (limBytes == null)
             limBytes = t.channel.canWrite();
         var x = t.generateBytecode(t.remoteState, limBytes);
         var dirty = x[0];
         var msg = x[1];
-        t.channel.write(Synchronizr.byteArrToStr(msg));
+        if(msg.length)
+            t.channel.write(Synchronizr.byteArrToStr(msg));
         if (t.autoSend && dirty) {
             t.txTimerBytes = limBytes;
             t.startTxTimer();
@@ -502,7 +521,7 @@ class Synchronizr {
     _generateBytecode0(data, otherData, limBytes, usedBytes) {
         var t = this;
         var rtn = [];
-        var dirtyBreak = false;
+        var dirtyBreak = false; // True = had to break early because byte limit exceeded
         for (var x = 0; x < data.length; x++) {
             var datum = data[x];
             var oDatum = otherData[x];
@@ -535,9 +554,10 @@ class Synchronizr {
             }
         }
         if (!dirtyBreak && otherData.length != data.length) {
-            rtn += t.op.SET_LENGTH_BT;
-            rtn += (data.length >> 8);
-            rtn += (data.length & 0xFF);
+            otherData.length = data.length;
+            rtn.push(t.op.SET_LENGTH_BT);
+            rtn.push(data.length >> 8);
+            rtn.push(data.length & 0xFF);
         }
         return [dirtyBreak, rtn];
     }

@@ -25,6 +25,8 @@ class Main{
         window.CHANNEL = t.channel;
         window.SC  = t.sc;
         window.SYN = s;
+
+        setInterval(t.sc.tick.bind(t.sc), 100);
     }
 
     onResize(){

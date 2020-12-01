@@ -13,15 +13,20 @@ class GameModel {
   * Parse an array of bytecode (Synchronizr.EVENT for PBP)
   * and apply the result to this model.
   * @param {Array} arrs Bytecode as Synchronizr.EVENT
+  * @param {Integer} limit How many plays to update (from end). 0 = all
   */
   parsePBPBytecode(arrs, limit) {
     var t = this;
-    var l = arrs.length;
     var pls = t.pbp.plays;
-    for (var x = l - 1; x >= l - limit; x--) {
+    var l = arrs.length;
+    var lower = limit == 0 ? 0 : l - limit;
+    for (var x = l - 1; x >= lower; x--) {
       if (!pls[x])
         pls[x] = new t.PBP_CLASS();
       pls[x].fromByteArray(arrs[x]);
+    }
+    if(limit == 0 && pls.length > arrs.length){
+      pls.length = arrs.length;
     }
   }
   genPBPBytecode(limit) {
@@ -132,6 +137,10 @@ class GameModel {
     return Synchronizr.joinArrs([town, name, abbr, img]);
   }
 
+  genDynamicBytecode(){
+    return [new Uint8Array([69, 69, 69, 69]), new Uint8Array(2)];
+  }
+
   /* Stuff for Synchronizr compatibliity */
   getStaticData() {
     this.synSInvalid = false;
@@ -139,7 +148,7 @@ class GameModel {
   }
   getDynamicData() {
     this.synDInvalid = false;
-    return [];
+    return this.genDynamicBytecode();
   }
   getEventData() {
     var e = this.synEInvalid;
@@ -162,10 +171,12 @@ class GameModel {
     this.synDInvalid = true;
   }
   invalidateEvent(e) {
+    if(e == null)
+      e = true;
     var t = this;
     if (e === true)
-      t.synSInvalid = e;
-    else if (t.synSInvalid !== true) {
+      t.synEInvalid = e;
+    else if (t.synEInvalid !== true) {
       t.synEInvalid |= 0;
       t.synEInvalid += e;
     }
@@ -188,7 +199,7 @@ class GameModel {
   }
   updateEventData(d, n) {
     // Set the last n PBPs from the last n of d
-    if (!n) n = d.length;
+    if (!n) n = 0;
     this.parsePBPBytecode(d, n);
   }
 }

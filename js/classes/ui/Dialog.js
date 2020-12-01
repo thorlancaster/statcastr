@@ -76,3 +76,12 @@ class Dialog{
         }
     }
 }
+
+class ConfirmationDialog extends Dialog{
+    constructor(name, fn){
+        super(name);
+        var btn = new ButtonField("Confirm").setStyle("fontSize", "1.5em");
+        this.body.appendChild(btn);
+        btn.addClickListener(fn);
+    }
+}

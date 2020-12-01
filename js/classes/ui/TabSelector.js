@@ -125,8 +125,7 @@ class TabSelectorMobile extends UIPanel {
             .setStyle("flexDirection", "column");
         t.main.addClass("tabSelectorMobile");
         t.appendChild(t.main);
-        t.curLbl = new TabSelectorItem("Uhh...", null, t)
-            .setStyle("fontSize", "1.25em");
+        t.curLbl = new TabSelectorItem("Uhh...", null, t);
         t.main.appendChild(t.curLbl);
         t.dropdown = new UIPanel()
             .setStyle("flexDirection", "column")

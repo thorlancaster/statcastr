@@ -30,6 +30,17 @@ class BasketballGameModel extends GameModel{
   }
 
   /**
+   * Call every 100ms or so to tick the clock
+   * @returns True if anything changed
+   */
+  tick(){
+    var t = this;
+    var r1 = t.clock.tick();
+    return r1; // OR tickables together for return value
+  }
+
+
+  /**
    * Get human-readable information on a Play-by-Play
    * @param {*} pbp PBPItem object
    * @param {*} obj Optional object returned from last invocation. Improves performance.
@@ -70,7 +81,7 @@ class BasketballGameModel extends GameModel{
   * @param name name of player, or null to remove
   */
   updateRoster(team, pid, name){
-    // TODO implement this
+    // TODO implement this? Probably not needed?
   }
 
   getLastPlayerFoul(millisBack){
@@ -158,7 +169,7 @@ class BasketballGameModel extends GameModel{
 
       switch(p.type){
         case BasketballPlayType.SET_CLOCK:
-          t.clock.period = p.pid;
+          // t.clock.period = p.pid;
         break;
         default:
           assert(false, "Unrecognized null-team play type");
@@ -168,12 +179,42 @@ class BasketballGameModel extends GameModel{
   }
 }
 
+// Rename to CountdownGameClock for sport-agnostic edition
 class BasketballGameClock extends GameClock{
   constructor(){
     super();
-    this.period = 0;
-    this.millisLeft = 0;
+    var t = this;
+    t.period = 0;
+    t.millisLeft = 0;
+    t._timer = null;
+    t._lastMs = null;
   }
+
+  setRunning(r){
+    var t = this;
+    t.running = r;
+  }
+
+  /**
+   * Call every 100ms or so to tick the clock
+   * @returns True if anything changed
+   */
+  tick(){
+    var t = this;
+    var ms = Date.now();
+    var rtn = false;
+    if(t.running && t._lastMs){
+      t.millisLeft -= (ms - t._lastMs);
+      rtn = true;
+      if(t.millisLeft < 0){
+        t.millisLeft = 0;
+        t.running = false;
+      }
+    }
+    t._lastMs = ms;
+    return rtn;
+  }
+
   getTime(){
     var ml = this.millisLeft;
     return{
