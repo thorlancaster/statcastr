@@ -35,6 +35,9 @@ class TextField extends UIPanel{
     getText(){
       return this.input.value;
     }
+    getValue(){
+      return this.getText();
+    }
     setText(txt){
       this.input.value = txt; return this;
     }

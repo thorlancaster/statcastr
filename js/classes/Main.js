@@ -4,6 +4,9 @@ class Main{
     constructor(){
         var t = this;
         window.MAIN = this;
+        window.Preferences = new MainPreferencesClass("Statcastr");
+        window.Credentials = new CredentialsPreferencesClass("Statcastr.credentials");
+        window.Preferences.load();
         t.MOBILE_WIDTH = 780; // If narrower, mobile layout is used
         t.mobile = (window.innerWidth < t.MOBILE_WIDTH);
         // ToastSetRoot(APP_ROOT);

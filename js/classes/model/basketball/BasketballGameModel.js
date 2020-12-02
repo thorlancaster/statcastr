@@ -45,8 +45,9 @@ class BasketballGameModel extends GameModel {
 	 * @param {*} pbp PBPItem object
 	 * @param {Boolean} html True to surround players with <span class='scPlayer(Team|Opp)'>
 	 * 		elements, false for plaintext
+	 * @param {Boolean} abbrs True to use abbreviated play names, false for full
 	 */
-	getPBPInfo(pbp, html) {
+	getPBPInfo(pbp, html, abbrs) {
 		var obj = { team: {} };
 		var tm = pbp.team == null ? null : (pbp.team ? this.team : this.opp);
 		var tmc = pbp.team == null ? '' : (pbp.team ? "Team" : "Opp");
@@ -78,11 +79,12 @@ class BasketballGameModel extends GameModel {
 		}
 		else {
 			var nPly = tm.players[pbp.pid];
+			var typeStr = abbrs ? T.toShortStr(pbp.type) : T.toLongStr(pbp.type);
 			if (html)
-				obj.play = T.toLongStr(pbp.type) + " by <span class='scPlayer"+tmc+"'>#" + nPly.id + ' ' +
+				obj.play = typeStr + " by <span class='scPlayer"+tmc+"'>#" + nPly.id + ' ' +
 					nPly.name + "</span>";
 			else
-				obj.play = T.toLongStr(pbp.type) + " by #" + nPly.id + ' ' + nPly.name;
+				obj.play = typeStr + " by #" + nPly.id + ' ' + nPly.name;
 		}
 		// TYPE by #N Name
 		return obj;

@@ -157,7 +157,7 @@ class TableField extends UIPanel {
 	}
 
 	/**
-	 * Set a row of the table to an array of Strings
+	 * Set a row of the table to an array of Strings (or <E extends UIPanel>s)
 	 * @param {Integer} y Row #
 	 * @param {String[]} texts Array of content
 	 * @param {Boolean} useHTML True to set HTML, false for just text
@@ -170,11 +170,21 @@ class TableField extends UIPanel {
 			t.setHighlight(r, false);
 		}
 		var ch = t.getRow(y).children;
-		for (var x = 0; x < ch.length && x < texts.length; x++)
-			if (useHTML)
-				ch[x].innerHTML = texts[x];
+		for (var x = 0; x < ch.length && x < texts.length; x++) {
+			var txt = texts[x];
+			if (typeof txt == 'object') {
+				ch[x].innerHTML = '';
+				ch[x].appendChild(txt.element);
+			}
+			else if (useHTML)
+				ch[x].innerHTML = txt;
 			else
-				ch[x].textContent = texts[x];
+				ch[x].textContent = txt;
+		}
+	}
+
+	setHeaderVisible(val){
+		this.table.children[1].style.display = val ? "" : "none";
 	}
 
 	getRow(y) {

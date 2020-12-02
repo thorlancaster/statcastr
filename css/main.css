@@ -18,7 +18,7 @@ body{
   --team-color1: #F00;
   --team-colorPly: #F22;
   --opp-color1: #05F;
-  --opp-colorPly: #4CF;
+  --opp-colorPly: #4DF;
   --gradient-bg: linear-gradient(var(--main-bg1), var(--main-bg2));
   background: var(--gradient-bg);
   --sel-fg: #FF0;
@@ -39,6 +39,7 @@ body{
   border-radius: 0.2em;
   padding-left: 0.2em;
   padding-right: 0.2em;
+  font-weight: bold;
 }
 .scPlayerTeam{
   color: var(--team-colorPly);
@@ -60,7 +61,7 @@ input.invalid{
 .appRoot.mobile{
   --view-display-width: 100%;
   --view-display-width: calc(100% - 2px);
-  font-size: 0.8em;
+  /* font-size: 0.8em; */
 }
 
 .link{
@@ -187,6 +188,47 @@ input.invalid{
   transition: color 0s, background 0s;
 }
 .buttonField button:focus {outline:0;}
+
+/* An element that holds a slider checkbox */
+.checkboxField .switch{
+  position: relative;
+  display: inline-block;
+  width: 2em;
+  height: 1em;
+}
+.checkboxField .switch input{
+  opacity: 0; width: 0; height: 0;
+}
+.checkboxField .slider{
+  position: absolute;
+  cursor: pointer;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: var(--sel-bg);
+  color: var(--sel-fg);
+  transition: .4s;
+}
+.checkboxField .slider:before {
+  position: absolute;
+  color: #0000;
+  content: " ";
+  line-height: 1em;
+  font-size: 0.8em;
+  height: 1em;
+  width: 1em;
+  left: 0.125em;
+  bottom: 0.125em;
+  background-color: var(--disabled-fg);
+  transition: .4s;
+}
+.checkboxField input:focus + .slider {
+  box-shadow: 0 0 1px var(--sel-fg);
+}
+.checkboxField input:checked + .slider:before {
+  transform: translateX(1.25em);
+  color: #000;
+  background: var(--sel-fg);
+  content: "✔";
+}
 
 /* An element that holds a table, usually with some type of stats in it*/
 .tableField{

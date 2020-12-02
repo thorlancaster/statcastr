@@ -52,8 +52,9 @@ class ScoreDisplayHeader extends UIPanel{
   }
   updateNameText(){
     var t = this;
-    t.guest.name.setText(MAIN.mobile ? t.oppAbbr : t.oppName);
-    t.home.name.setText(MAIN.mobile ? t.teamAbbr : t.teamName);
+    var ab = Preferences.useAbbrsOnMobile;
+    t.guest.name.setText(ab && MAIN.mobile ? t.oppAbbr : t.oppName);
+    t.home.name.setText(ab && MAIN.mobile ? t.teamAbbr : t.teamName);
   }
 }
 class ScoreDisplayHeaderTeam extends UIPanel{

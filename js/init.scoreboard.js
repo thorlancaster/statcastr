@@ -31,10 +31,12 @@ class Initializer {
     l.loadScript("js/classes/ui/Toast.js");
     l.loadScript("js/classes/ui/ButtonField.js");
     l.loadScript("js/classes/ui/TextField.js");
+    l.loadScript("js/classes/ui/CheckboxField.js");
     l.loadScript("js/classes/ui/ProgressBarField.js");
     l.loadScript("js/classes/ui/ImageField.js");
     l.loadScript("js/classes/ui/NumberField.js");
     l.loadScript("js/classes/ui/TableField.js");
+    l.loadScript("js/classes/ui/PreferencesField.js");
     l.loadScript("js/classes/ui/TabSelector.js");
     // Components
     l.loadScript("js/classes/components/DisplayTable.js");
@@ -59,6 +61,7 @@ class Initializer {
     l.loadScript("js/classes/synchronizr/ReliableChannel.js");
     l.loadScript("js/classes/synchronizr/Synchronizr.js");
     // Main App
+    l.loadScript("js/classes/Preferences.js");
     l.loadScript("js/classes/StatcastrApp.js");
 
     l.loadScript("js/classes/Main.js");

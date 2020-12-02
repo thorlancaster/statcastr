@@ -33,7 +33,7 @@ class StatcastrApp {
 		t.isAdmin = isAdmin;
 
 		t.viewSelector = t.createViewSelector();
-		t.viewSelector.addSelectionListener(function (sel) { t.onViewSelected(sel) });
+		t.viewSelector.addSelectionListener(function (sel) { t.onViewSelectedDirect(sel) });
 		t.appRoot.appendChild(t.viewSelector.element);
 
 		t.viewContainer = DCE("div", "viewContainer");
@@ -53,7 +53,7 @@ class StatcastrApp {
 		t.generateView("opponentStats", new TeamStatsView(t.model, false));
 		t.generateView("admin", new AdminView(t.model, t.synchronizrPtr, t.onAdminScoreboardUpdate.bind(t)));
 		// t.setView("scoreboard");
-		t.setView("playByPlay");
+		t.setView(Preferences.defaultView);
 		t.update();
 		if (eventId == null) // If no event is selected, ask the user to choose one
 			t.onViewSelected("eventList");
@@ -72,12 +72,14 @@ class StatcastrApp {
 		setTimeout(function () {
 			t.onResize();
 			t.viewSelector.setSelected(t.selectedView);
+			t.getSelectedView().resize();
 		}, 0);
 
 		t.touchManager = new TouchManager(t.appRoot);
 		t.touchManager.addGestureListener(t.onGesture.bind(t));
 		t.touchManager.start();
 		window.TOUCH = t.touchManager;
+
 	}
 
 	/**
@@ -121,6 +123,14 @@ class StatcastrApp {
 		console.log("1000 PBP reloads: " + (performance.now() - perf) + "ms");
 	}
 
+	onViewSelectedDirect(sel){ // Called by the TabSelector and nothing else
+		this.onViewSelected(sel);
+		if(sel != "eventList" && sel != "help"){
+			Preferences.defaultView = sel;
+			Preferences.save();
+		}
+	}
+
 	onViewSelected(sel) {
 		switch (sel) {
 			case "eventList":
@@ -130,9 +140,10 @@ class StatcastrApp {
 			default:
 				this.setView(sel);
 		}
+
 		this.getSelectedView().resize();
 		this.getSelectedView().resize();
-		this.getSelectedView().update();
+		this.update();
 	}
 
 	createViewSelector() {
@@ -180,9 +191,33 @@ class StatcastrApp {
 		var t = this;
 		if(dlg == "adminLogin"){
 			var d = new Dialog("Log in");
+			var form = new PreferencesField(Credentials);
+			d.body.appendChild(form);
+			var submitBtn = new ButtonField("Submit");
+			submitBtn.addClickListener(function(){
+				if(!form.isValid()){
+					new Toast("Invalid values");
+					return;
+				}
+				form.setStyle("display", "none");
+				submitBtn.setStyle("display", "none");
+				d.body.prependChild(new TextField("Verifying password...<br/><br/>", true));
+				d.body.prependChild(t.createLoadingField());
+				var overrideBtn = new ButtonField("Override Verification");
+				overrideBtn.addClickListener(function(){
+					alert("H4x0r");
+				});
+				d.body.appendChild(overrideBtn);
+				// d.close();
+				var creds = form.getState();
+				
+				// TODO verify credentials with server
+				console.log(creds);
+			});
+			d.body.appendChild(submitBtn);
 			d.show();
 		}
-		if (dlg == "loadingStatsFeed") {
+		else if (dlg == "loadingStatsFeed") {
 			var d = new Dialog("&nbsp;Loading stats feed...&nbsp;");
 			d.setId("loadingStatsDlg");
 			d.body.appendChild(new TextField("Please wait a few seconds<br/>Or press 'X' to choose another event", true).setStyle("textAlign", "center"));
@@ -248,11 +283,51 @@ class StatcastrApp {
 			}
 			d.show();
 		} else if (dlg == "help") {
-			var d = new Dialog("Help / About");
+			var d = new Dialog("Help");
 			d.body.appendChild(new TextField("Select \"Events\" From the top menu to select a feed to watch." +
-				"<br/>To view the feed in different ways, select one of the tabs at the top." +
-				"<br/><br/>Statcastr version " + Constants.version + "<br/>&#169;" + Constants.copyright +
-				"<br/>", true).setStyle("whiteSpace", "initial"));
+				"<br/>To view the feed in different ways, select one of the tabs at the top.", true)
+				.setStyle("whiteSpace", "initial"));
+			var aboutBtn = new ButtonField("About Statcastr");
+			aboutBtn.addClickListener(function(){
+				d.close();
+				t.showMainDialog("about");
+			});
+			var prefsBtn = new ButtonField("Preferences");
+			prefsBtn.addClickListener(function(){
+				d.close();
+				t.showMainDialog("preferences");
+			});
+			var btns = new UIPanel();
+			btns.appendChild(aboutBtn);
+			btns.appendChild(prefsBtn);
+			d.body.appendChild(new UIPanel().setStyle("height", "3em"));
+			d.body.appendChild(btns);
+			d.show();
+		}
+		else if(dlg == "about"){
+			var d = new Dialog("About Statcastr");
+			d.body.appendChild(new ImageField("resources/favicon/favicon-256.png").setStyle("height", "5em"));
+			d.body.appendChild(new TextField("Statcastr version " + Constants.version + "<br/>&#169;" + Constants.copyright +
+			"<br/>", true).setStyle("whiteSpace", "initial"));
+			d.show();
+		}
+		else if(dlg == "preferences"){
+			var d = new Dialog("Preferences");
+			var prefs = new PreferencesField(Preferences, Preferences.renameFn);
+			d.body.appendChild(prefs);
+			var submitBtn = new ButtonField("Submit");
+			submitBtn.addClickListener(function(){
+				if(!prefs.isValid()){
+					new Toast("Invalid values");
+					return;
+				}
+				d.close();
+				Preferences.setFrom(prefs.getState());
+				Preferences.save();
+				t.applyPreferences();
+				new Toast("Preferences saved");
+			});
+			d.body.appendChild(submitBtn);
 			d.show();
 		}
 		else console.warn("Unsupported ShowMainDialog " + dlg);
@@ -304,6 +379,9 @@ class StatcastrApp {
 	setView(vid) {
 		var t = this;
 		if(vid == "admin" && !t.isAdmin){
+			if(!t.selectedView){
+				t.setView("scoreboard");
+			}
 			t.viewSelector.setSelected(t.selectedView);
 			new Toast("Login required");
 			t.showMainDialog("adminLogin");
@@ -338,6 +416,14 @@ class StatcastrApp {
 	onAdminScoreboardUpdate() {
 		this.update();
 	}
+	applyPreferences(){
+		this.applyCSSPreferences();
+		this.onResize();
+		this.update();
+	}
+	applyCSSPreferences(){
+
+	}
 	update() {
 		this.getSelectedView().update();
 	}
@@ -350,13 +436,13 @@ class StatcastrApp {
 		else
 			t.appRoot.classList.remove("mobile");
 
-		t.getSelectedView().resize();
 		if (m != t._mobile) {
 			// Some elements need resize()d twice when mobile changes as well
 			t._mobile = m;
 			t.getSelectedView().resize();
+			t.update();
 		}
-
+		t.getSelectedView().resize();
 		t.viewSelector.resize();
 	}
 
