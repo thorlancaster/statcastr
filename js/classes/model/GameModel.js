@@ -25,7 +25,7 @@ class GameModel {
         pls[x] = new t.PBP_CLASS();
       pls[x].fromByteArray(arrs[x]);
     }
-    if(limit == 0 && pls.length > arrs.length){
+    if (limit == 0 && pls.length > arrs.length) {
       pls.length = arrs.length;
     }
   }
@@ -39,13 +39,21 @@ class GameModel {
     return rtn;
   }
 
+  parseDynamicBytecode(arrs) {
+    var t = this;
+    if (arrs[0])
+      t.clock.fromByteArray(arrs[0]);
+    var desc = arrs[1];
+    // TODO put game description on page
+  }
+
   /**
    * Parse an array of bytecode (Synchronizr.STATIC for events)
    * and apply the result to this model. Data contains team names, game
    * description (tournaments etc.) and rosters.
    * @param {Array} arrs Bytecode as Synchronizr.STATIC
    */
-  parseEventBytecode(arrs) {
+  parseStaticBytecode(arrs) {
     var t = this;
     // Parse the bytecode
     var ptr = [0];
@@ -137,8 +145,9 @@ class GameModel {
     return Synchronizr.joinArrs([town, name, abbr, img]);
   }
 
-  genDynamicBytecode(){
-    return [new Uint8Array([69, 69, 69, 69]), new Uint8Array(2)];
+  genDynamicBytecode() {
+    return [this.clock.toByteArray(), new Uint8Array(0)];
+    // TODO second element is message to fans
   }
 
   /* Stuff for Synchronizr compatibliity */
@@ -171,7 +180,7 @@ class GameModel {
     this.synDInvalid = true;
   }
   invalidateEvent(e) {
-    if(e == null)
+    if (e == null)
       e = true;
     var t = this;
     if (e === true)
@@ -192,10 +201,11 @@ class GameModel {
   }
   updateStaticData(d) {
     // Set the rosters, names, etc.
-    this.parseEventBytecode(d);
+    this.parseStaticBytecode(d);
   }
   updateDynamicData(d) {
-    // TODO set the clock, etc from d
+    // set the clock, etc from d
+    this.parseDynamicBytecode(d);
   }
   updateEventData(d, n) {
     // Set the last n PBPs from the last n of d
@@ -274,17 +284,18 @@ class PBPItem {
   * @param millis Milliseconds since start of Period / until end of Period (Integer)
   * @param pid Player jersey # (String), or Period (Integer), when setting time
   * @param team true if Team, false if Opponent, null if neither
-  * @param linked true if this was created at the same time as the last one.
-  *     Used by Admin for keeping track of undo, not serialized or stored persistently
+  * @param pid2 [optional] Player jersey # for 2-player plays
   */
-  constructor(period, millis, pid, team, linked) {
-    this.period = period;
-    this.millis = millis;
-    this.pid = pid;
-    this.team = team;
-    this.rTeamScore = 0; // Running team and Opponent scores after this play
-    this.rOppScore = 0; // These are to be computed by sport-specific Game Models
-    this.linked = (linked == true);
+  constructor(period, millis, pid, team, pid2) {
+    var t = this;
+    t.period = period;
+    t.millis = millis;
+    t.pid = pid;
+    t.pid2 = (pid2 != null) ? pid2 : 0;
+    t.team = team;
+    t.rTeamScore = 0; // Running team and Opponent scores after this play
+    t.rOppScore = 0; // These are to be computed by sport-specific Game Models
+    t.linked = false;
   }
   getTime() {
     return {
@@ -292,6 +303,15 @@ class PBPItem {
       seconds: Math.floor((this.millis / 1000) % 60),
       millis: this.millis % 1000
     };
+  }
+
+  /**
+  * Set whether this play is linked to the last one
+  * @param linked true if this was created at the same time as the last one.
+  *     Used by Admin for keeping track of undo, not serialized or stored persistently
+  */
+  setLinked(linked) {
+    t.linked = (linked == true);
   }
   getTimeStr() {
     var t = this.getTime();

@@ -11,7 +11,7 @@ class Dialog{
         t.box = new UIPanel().addClass("dialogBox")
             .setStyle("minWidth", "16em")
             .setStyle("minHeight", "8em")
-            .setStyle("maxHeight",  "95%")
+            .setStyles("maxWidth", "maxHeight",  "95%")
             .setStyle("background", "var(--main-bg2)")
             .setStyle("position", "absolute")
             .setStyle("flex-direction", "column");

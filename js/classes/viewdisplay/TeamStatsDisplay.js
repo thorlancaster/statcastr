@@ -14,7 +14,7 @@ class TeamStatsDisplay extends TabbedViewDisplay{
 
         t.mainTable = new TeamStatsDisplayTable(t.team.town);
         t.mainTable.setColumns([
-            ["Player", "numNameStr"],
+            ["Player", whichTeam ? "numNameStrHtmlT" : "numNameStrHtmlO"],
             ["PTS", "points"],
             ["FLS", "fouls"],
             ["FG", "fgStr"],

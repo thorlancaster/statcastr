@@ -18,3 +18,27 @@ class TextField extends UIPanel{
     setHtml(html){
       this.element.innerHTML = html; return this;}
   }
+
+  class EditTextField extends UIPanel{
+    constructor(txt, sz){
+      super();
+      var t = this;
+      t.addClass("editTextField");
+      t.input = DCE("input");
+      t.input.type = "text";
+      t.element.appendChild(t.input);
+      if(txt != null)
+        t.setText(txt);
+      if(sz != null)
+        t.setSize(sz);
+    }
+    getText(){
+      return this.input.value;
+    }
+    setText(txt){
+      this.input.value = txt; return this;
+    }
+    setSize(x){
+      this.input.size = x;
+    }
+  }

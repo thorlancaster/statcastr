@@ -36,6 +36,7 @@ class BasketballTeam extends Team{
       }
       if(!otherTeam){
         var pl = t.players[p.pid];
+        var pl2 = t.players[p.pid2];
         assert(pl != null, "Player for doPlay DNE");
         const T = BasketballPlayType;
         if(!otherFilter){
@@ -57,8 +58,7 @@ class BasketballTeam extends Team{
             case T.BLOCK: pl.blocks++; break;
             case T.STEAL: pl.steals++; break;
             case T.TURNOVER: pl.turnovers++; break;
-            case T.SUB_IN: pl.onCourt = true; break;
-            case T.SUB_OUT: pl.onCourt = false; break;
+            case T.SUB: pl.onCourt = true; pl2.onCourt = false; break;
             default: assert(false, "Unrecognized play type");
           }
         } else {

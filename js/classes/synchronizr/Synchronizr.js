@@ -430,6 +430,7 @@ class Synchronizr {
             t.mergeArrs(t.dynamicData, model.getDynamicData());
             model.revalidateDynamic();
         }
+        // TODO handle partial saves more efficiently
         t.updateStorage(t.eventId, si, di, ei);
     }
     mergeArrs(dest, src) {

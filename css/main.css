@@ -16,7 +16,9 @@ body{
   --main-valid: #FFF;
   --main-invalid: #F98;
   --team-color1: #F00;
+  --team-colorPly: #F22;
   --opp-color1: #05F;
+  --opp-colorPly: #4CF;
   --gradient-bg: linear-gradient(var(--main-bg1), var(--main-bg2));
   background: var(--gradient-bg);
   --sel-fg: #FF0;
@@ -30,6 +32,19 @@ body{
   font-family: "Helvetica", "sans-serif";
   user-select: none;
   touch-action: manipulation;
+}
+
+.scPlayerTeam, .scPlayerOpp{
+  background: var(--sel-bg);
+  border-radius: 0.2em;
+  padding-left: 0.2em;
+  padding-right: 0.2em;
+}
+.scPlayerTeam{
+  color: var(--team-colorPly);
+}
+.scPlayerOpp{
+  color: var(--opp-colorPly);
 }
 
 input{

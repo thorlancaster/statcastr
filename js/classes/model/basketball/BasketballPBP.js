@@ -6,14 +6,15 @@ class BasketballPBPItem extends PBPItem{
   * @param team see PBPItem
   * @param type a valid play type (from BasketballPlayType)
   */
-  constructor(period, millis, pid, team, type){
-    super(period, millis, pid, team);
+  constructor(period, millis, pid, team, type, pid2){
+    super(period, millis, pid, team, pid2);
     if(type != null)
       assert(BasketballPlayType.isValid(type), "Invalid Play Type");
     this.type = type;
   }
   // The following functions are required for Synchronizr serialization / deserialization
-  // Binary format (byte-wise) period  millis[MSB] millis[NSB] millis[LSB]  pid  byte(team, type) RESERVED RESERVED
+  // Binary format (byte-wise): period millis[MSB] millis[NSB] millis[LSB]  pid  byte(team, type) RESERVED RESERVED
+  // RESERVED tentative format: (SubOut# || ShotChartX) ShotChartY
   toByteArray(){
     var t = this;
     var a = new Uint8Array(8);
@@ -24,7 +25,7 @@ class BasketballPBPItem extends PBPItem{
     a[3] = t.millis;
     a[4] = t.pid == "00" ? "255" : parseInt(t.pid);
     a[5] = tflag + (t.type&63);
-    a[6] = 0;
+    a[6] = t.type == BasketballPlayType.SUB ? t.pid2 : 0;
     a[7] = 0;
     return a;
   }
@@ -37,6 +38,9 @@ class BasketballPBPItem extends PBPItem{
     t.type = a[5] & 63;
     var tflag = a[5] & 192;
     t.team = tflag==128?true:(tflag==64?false:null);
+    if(t.type == BasketballPlayType.SUB)
+      t.pid2 = a[6] == 255 ? "00" : "" + a[6];
+    else {} // This is where shot chart position will be loaded
     return this;
   }
 }

@@ -158,11 +158,11 @@ class TableField extends UIPanel {
 
 	/**
 	 * Set a row of the table to an array of Strings
-	 * HTML is not parsed.
-	 * @param {Integer} y 
-	 * @param {String[]} texts 
+	 * @param {Integer} y Row #
+	 * @param {String[]} texts Array of content
+	 * @param {Boolean} useHTML True to set HTML, false for just text
 	 */
-	setRow(y, texts) {
+	setRow(y, texts, useHTML) {
 		var t = this;
 		t.ensureLength(y);
 		var r = t.getRow(y);
@@ -170,8 +170,11 @@ class TableField extends UIPanel {
 			t.setHighlight(r, false);
 		}
 		var ch = t.getRow(y).children;
-		for (var x = 0; x < ch.length; x++)
-			ch[x].textContent = texts[x];
+		for (var x = 0; x < ch.length && x < texts.length; x++)
+			if (useHTML)
+				ch[x].innerHTML = texts[x];
+			else
+				ch[x].textContent = texts[x];
 	}
 
 	getRow(y) {
@@ -251,7 +254,7 @@ class EditableTableField extends TableField {
 		this.getRow(y).children[x].children[0].value = value;
 	}
 
-	isAllValid(){
+	isAllValid() {
 		return this.element.getElementsByClassName("invalid").length == 0;
 	}
 

@@ -34,7 +34,7 @@ class TeamStatsDisplayTable extends DisplayTable{
           if(typeof stat == "function")
             t.table.setCell(y, row, stat.call(null, ply));
           else
-            t.table.setCell(y, row, ply[stat]);
+            t.table.setCell(y, row, ply[stat], y == 0);
         }
         // t.table.setCell(0, row, ply.id);
         row++;

@@ -47,8 +47,14 @@ class BasketballPlayer extends Player{
   
     get numNameStr(){
       var sid = this.id;
-      if(sid.length == 1) sid = "0" + sid;
-      return sid + " " + this.name;
+      // if(sid.length == 1) sid = "0" + sid;
+      return '#' + sid + ' ' + this.name;
+    }
+    get numNameStrHtmlT(){// Get Num/Name Str as HTML, Team
+      return "<span class='scPlayerTeam'>" + this.numNameStr + "</span>";
+    }
+    get numNameStrHtmlO(){// Get Num/Name Str as HTML, Opponent
+      return "<span class='scPlayerOpp'>" + this.numNameStr + "</span>";
     }
     get nbaEfficiency(){
       var t = this;

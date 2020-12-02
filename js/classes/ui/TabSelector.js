@@ -61,9 +61,10 @@ class TabSelector extends UIPanel {
     }
 
     setSelected(name) {
-        this.onSelect(name);
+        this.onSelect(name, true);
     }
-    onSelect(name) {
+    
+    onSelect(name, noUpdate) {
         var t = this;
         var i = t.getItem(name);
         if (t.selected != name) {
@@ -72,7 +73,8 @@ class TabSelector extends UIPanel {
                 t.setHighlighted(name);
                 t.mobile.setLabel(i.getHtml() + " &#9660;");
             }
-            t.notifySelect(name);
+            if(!noUpdate)
+                t.notifySelect(name);
         }
     }
     getItem(name) {
@@ -166,7 +168,7 @@ class TabSelectorMobile extends UIPanel {
                 var ts = new TabSelectorItem(itms[x].getHtml(), itms[x].getName(), this)
                     .setStyle("width", "100%")
                     .setStyle("justifyContent", "left")
-                    .setStyles("paddingTop", "paddingBottom", "0.2em");
+                    .setStyles("paddingTop", "paddingBottom", "0.5em");
                 if (itms[x].isSelected())
                     ts.setSelected(true);
                 t.dropdown.appendChild(ts);

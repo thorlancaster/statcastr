@@ -21,9 +21,8 @@ const BasketballPlayType = {
     STEAL: 16,
     TURNOVER: 17,
     SET_CLOCK: 18,
-    SUB_IN: 19,
-    SUB_OUT: 20,
-    CHARGE_TAKEN: 21,
+    SUB: 19,
+    CHARGE_TAKEN: 20,
     longStr: [
       "INVALID",
       "Foul",
@@ -44,8 +43,7 @@ const BasketballPlayType = {
       "Steal",
       "Turnover",
       "Clock Set",
-      "Sub In",
-      "Sub Out",
+      "Substitution",
       "Charge Taken"
     ],
     /**
@@ -68,6 +66,6 @@ const BasketballPlayType = {
      */
     toLongStr: function(x){return this.longStr[x];},
     isValid: function(x){
-      return x >= 1 && x <= 21;
+      return x >= 1 && x <= 20;
     }
   }
