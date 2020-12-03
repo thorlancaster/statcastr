@@ -54,6 +54,7 @@ class AdminWidget extends UIPanel {
 		t.pdt.table.enableClickListener(t.onPDTClick.bind(t));
 		t.pdt.setStyle("fontSize", "0.769em");
 		t.pdt.setStyle("lineHeight", "1.5em");
+		t.pdt.filter = {}; // Most recent last
 		t.pdt.label.hide();
 		t.pdt.table.clearHighlightsOnUpdate = true;
 		t.appendChild(t.pdt);
@@ -260,6 +261,8 @@ class AdminWidget extends UIPanel {
 						t.onCommitNewPlay(); break;
 					case "escape":
 						t.onBackAction(); break;
+					case "m":
+						t.onToggleMade();
 				}
 			} else {
 				switch (char) {
@@ -271,6 +274,7 @@ class AdminWidget extends UIPanel {
 					case '3': t.p3Btn.click(); break;
 					case 'f': t.pfBtn.click(); break;
 					case 'c': t.ckBtn.click(); break;
+					case 'C': t.onClockXLong(); break;
 
 					case 'r': t.rbBtn.click(); break;
 					case 's': t.stlBtn.click(); break;
@@ -283,6 +287,7 @@ class AdminWidget extends UIPanel {
 	}
 
 	onPDTClick(rowNum) { // Called when a play in the PBP Display Table is clicked
+		return;
 		var t = this;
 		var tbl = t.pdt.table;
 		var oh = tbl.getHighlight(rowNum);
@@ -346,7 +351,7 @@ class AdminWidget extends UIPanel {
 				assert(false, "lastPlaySelection invalid");
 		}
 		var s = t.getSynchronizr();
-		var c = t.model.clock;
+		var clk = t.model.clock;
 		if (lps == "Sub") {
 			// Calculate pOld and pNew, representing the existing and new onCourt player ids
 			var onCourt = t.selTeam ? t.model.team.onCourt() : t.model.opp.onCourt();
@@ -370,17 +375,21 @@ class AdminWidget extends UIPanel {
 					"\nAttempting to fix the issue\n----THIS SHOULD NEVER HAPPEN----");
 				new Toast("Internal substitution error, attempting fix");
 			}
-
+			var cpd = clk.period;
+			var cms = clk.millisLeft;
 			// Submit subs and update PBP after all but last play
 			var totLen = Math.max(subIn.length, subOut.length);
 			for (var x = 0; x < totLen; x++){
 				var numIn = subIn[Math.min(x, subIn.length - 1)];
 				var numOut = subOut[Math.min(x, subOut.length - 1)];
-				debugger;
-				t.model.pbp.addPlay(new BasketballPBPItem(t.entryPd, t.entryMs, numIn, t.selTeam, bpt.SUB, numOut));
+				var pItm = new BasketballPBPItem(t.entryPd, t.entryMs, numIn, t.selTeam, bpt.SUB, numOut);
+				if(x > 0) pItm.setLinked(true);
+				t.model.pbp.addPlay(pItm);
 				if(x < totLen - 1)
 					t.model.updateFromPBP(); // Update last PBP before adding another
 			}
+			clk.period = cpd;
+			clk.millisLeft = cms;
 			new Toast("Subs Submitted");
 			t.updateAll(3);
 		}
@@ -424,13 +433,16 @@ class AdminWidget extends UIPanel {
 		var m = t.model;
 		var d = new ConfirmationDialog("Delete last play?", function () {
 			d.remove();
-			// var ms = m.clock.millisLeft, pd = m.clock.period;
-			var s = t.getSynchronizr();
-			m.pbp.removePlay();
+			m.pbp.removePlay(null, true);
 			new Toast("Last play deleted");
 			t.updateAll(2);
 			t.vibrate(t.VIBE_SUCCESS);
 		});
+		var pbpInfo = m.getPBPInfo(m.pbp.plays[m.pbp.plays.length - 1], Preferences.playersAreColored, true);
+		while(pbpInfo){
+			d.body.prependChild(new TextField(pbpInfo.time + "&emsp;" + pbpInfo.play, true));
+			pbpInfo = pbpInfo.linked;
+		}
 		d.show();
 	}
 	onReplaceX() { // Called when replace button is pressed

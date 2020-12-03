@@ -3,14 +3,6 @@ class PreferencesClass {
         var t = this;
         t._name = name;
     }
-    renameFn(str){
-        switch(str){
-            case "playersAreColored": return "Highlight player names";
-            case "useAbbrsOnMobile": return "Abbreviate entries on small screens";
-            case "defaultView": return null;
-        }
-        return str;
-    }
     getSaveName() {
         return this._name + ".preferences";
     }
@@ -66,7 +58,17 @@ class MainPreferencesClass extends PreferencesClass{
         var t = this;
         t.playersAreColored = true;
         t.useAbbrsOnMobile = true;
+        t.enlargeFonts = true;
         t.defaultView = "scoreboard";
+    }
+    renameFn(str){
+        switch(str){
+            case "playersAreColored": return "Highlight player names";
+            case "useAbbrsOnMobile": return "Abbreviate entries on small screens";
+            case "enlargeFonts": return "Larger font";
+            case "defaultView": return null;
+        }
+        return str;
     }
 }
 
@@ -76,5 +78,8 @@ class CredentialsPreferencesClass extends PreferencesClass{
         var t = this;
         t.username = "";
         t.password = "";
+    }
+    hasCredentials(){
+        return this.username.length + this.password.length > 0;
     }
 }

@@ -5,14 +5,21 @@ class Toast {
     constructor(message, delay1) {
         if(!delay1) delay1 = 2500;
         var delay2 = 500;
-        // console.info("Toast: " + message);
+        var oldEl = DGE("toastEl");
+        if(oldEl){
+            oldEl.parentElement.removeChild(oldEl);
+            clearTimeout(oldEl.tTmrId);
+        }
         var el = DCE("div", "toast");
-        el.innerText = message;
+        el.id = "toastEl";
+        var el2 = DCE("span");
+        el2.innerText = message;
+        el.appendChild(el2);
         if (!window.Toast_ToastRoot)
             document.body.appendChild(el);
         else
             window.Toast_ToastRoot.appendChild(el);
-        setTimeout(function(){
+        el.tTmrId = setTimeout(function(){
             el.classList.add("ending");
             setTimeout(function(){
                 el.parentElement.removeChild(el);

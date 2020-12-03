@@ -46,6 +46,7 @@ class BasketballGameModel extends GameModel {
 	 * @param {Boolean} html True to surround players with <span class='scPlayer(Team|Opp)'>
 	 * 		elements, false for plaintext
 	 * @param {Boolean} abbrs True to use abbreviated play names, false for full
+	 * @returns information on the play (team, time, score, play, and linked [which is another PBPInfo, as a linked list])
 	 */
 	getPBPInfo(pbp, html, abbrs) {
 		var obj = { team: {} };
@@ -86,7 +87,9 @@ class BasketballGameModel extends GameModel {
 			else
 				obj.play = typeStr + " by #" + nPly.id + ' ' + nPly.name;
 		}
-		// TYPE by #N Name
+
+		if(pbp.linked && pbp.linkedPlay)
+			obj.linked = this.getPBPInfo(pbp.linkedPlay, html, abbrs);
 		return obj;
 	}
 	/**
@@ -164,6 +167,7 @@ class BasketballGameModel extends GameModel {
 		var lp = t.pbp.plays[x - 1]; // Last Play
 		if (p.millis) t.clock.millisLeft = p.millis;
 		if (p.period) t.clock.period = p.period;
+		p.linkedPlay = p.linked ? lp : null; // Link last play
 
 		for (var y = 0; y < t.subStats.length; y++)
 			t.subStats[y].doPlay(p);

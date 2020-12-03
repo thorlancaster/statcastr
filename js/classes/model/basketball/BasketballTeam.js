@@ -12,7 +12,8 @@ class BasketballTeam extends Team{
         for(var x in t.players){
           var pl = t.players[x];
           if(pl.onCourt)
-            pl.playMs += dTime;
+            pl.playMs += dTime; // Playing time
+          pl.lastMs = p.millis; // Time when playing time was last updated
           // if(pl.id == '1'){
           //   console.log(pl.playMs)
           // }

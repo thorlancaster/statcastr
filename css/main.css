@@ -57,11 +57,12 @@ input.invalid{
 
 .appRoot{
   --view-display-width: 88%;
+  font-size: var(--desktop-font-sz);
 }
 .appRoot.mobile{
   --view-display-width: 100%;
   --view-display-width: calc(100% - 2px);
-  /* font-size: 0.8em; */
+  font-size: var(--mobile-font-sz);
 }
 
 .link{
@@ -93,16 +94,17 @@ input.invalid{
 .toast{
   z-index: 3;
   position: fixed;
-  bottom: 2px;
-  left: 50%;
-  transform: translate(-50%);
+  bottom: 1.2em;
+  text-align: center;
+  width: 100%;
+  pointer-events: none;
+  transition: opacity 0.5s;
+}
+.toast span{
   background: var(--main-bg1);
   border: 1px solid var(--main-bg2);
   padding: 0.5em;
   border-radius: 1em;
-  font-size: 1.3em;
-  pointer-events: none;
-  transition: opacity 0.5s;
 }
 .toast.ending{
   opacity: 0;

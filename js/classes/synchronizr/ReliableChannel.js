@@ -5,7 +5,8 @@ class ReliableChannel {
         this.rxCallback = null; // Function to call on rx
         this.dcCallback = null; // Function to call on conn lost
         this.opCallback = null; // Function to call on conn established
-
+        this.inCallback = null; // Function to call on conn initialized
+        this.autoReconnect = true;
         this.dbgTryPorts = 6; // How many ports up to try on failure
     }
     setReceiveCallback(cb) {
@@ -17,11 +18,17 @@ class ReliableChannel {
     setOpenCallback(cb) {
         this.opCallback = cb;
     }
+    setInitCallback(cb) {
+        this.inCallback = cb;
+    }
     setTarget(targ, port) {
         this.connTarget = targ;
         this.connPort = port;
         this.origConnPort = port;
         this.disconnect();
+    }
+    setAutoReconnect(x){
+        this.autoReconnect = x;
     }
     /**
      * @returns length of read queue
@@ -47,13 +54,25 @@ class ReliableChannel {
     reconnect() { throw "Abstract Method" }
 }
 
+
 class WebsocketReliableChannel extends ReliableChannel {
     constructor() {
         super();
         var t = this;
         t.MAX_BUFFER_SZ = 10000;
+        t.TIMEOUT = 20000;
         t.ws = null;
         t.queue = [];
+    }
+
+    tick(){
+        var t = this;
+        if(!t.isConnected()){
+            t.disconnect();
+            if(t.timer) clearInterval(t.timer);
+        } else {
+            this.ws.send(' ');
+        }
     }
 
     available() {
@@ -106,10 +125,15 @@ class WebsocketReliableChannel extends ReliableChannel {
         });
         // t.ws.addEventListener("error", t.handleWsError.bind(t));
         t.ws.addEventListener("open", function (e) {
+            t.everConnected = true;
             if (typeof t.opCallback == "function")
                 t.opCallback(t.connPort);
         });
         t.connAttemptTime = Date.now();
+        if(t.timer) clearInterval(t.timer);
+        t.timer = setInterval(t.tick.bind(t), t.TIMEOUT);
+        if (typeof t.inCallback == "function")
+            t.inCallback();
     }
 
     reconnect() {
@@ -120,11 +144,18 @@ class WebsocketReliableChannel extends ReliableChannel {
     handleWsClose(e) {
         var tm = Date.now();
         var t = this;
-        if (t.dbgTryPorts && e.code == 1006 && !t.ws.rcEverConnected && t.connPort - t.origConnPort <= t.dbgTryPorts
-            && tm < 1000 + t.connAttemptTime) {
+        if(t.timer) clearInterval(t.timer);
+        if (t.dbgTryPorts && e.code == 1006 && !t.everConnected && t.connPort - t.origConnPort <= t.dbgTryPorts) {
             t.connPort++;
             t.disconnect();
-            t.connect();
+        }
+        if(t.autoReconnect){
+            if(t.reconnTmr)
+                clearTimeout(t.reconnTmr);
+            t.reconnTmr = setTimeout(function(){
+                if(t.autoReconnect)
+                    t.connect();
+            }, 3000);
         }
     }
 

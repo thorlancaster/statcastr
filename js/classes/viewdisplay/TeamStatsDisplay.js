@@ -31,7 +31,7 @@ class TeamStatsDisplay extends TabbedViewDisplay {
             ["BL", "blocks"],
             ["ST", "steals"],
             ["MIN", function (player) {
-                return player.getPlayTimeStr();
+                return player.getPlayTimeStr(this.model.clock.millisLeft);
             }.bind(this)]
         ]);
     }

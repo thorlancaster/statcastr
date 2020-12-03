@@ -67,12 +67,17 @@ class Dialog{
     static isOpen(){
         return document.getElementsByClassName("dialogBox").length;
     }
+
+    static isOpenById(str){
+        var el = DGE(str);
+        return el != null;
+    }
+
     static removeById(str){
-        // console.log("RemoveDlg" + str);
         var el = DGE(str);
         if(el){
             el.classList.remove("showing");
-            setTimeout(function(){el.parentElement.removeChild(el)}, 150);
+            setTimeout(function(){if(el.parentElement) el.parentElement.removeChild(el)}, 150);
         }
     }
 }
@@ -80,7 +85,7 @@ class Dialog{
 class ConfirmationDialog extends Dialog{
     constructor(name, fn){
         super(name);
-        var btn = new ButtonField("Confirm").setStyle("fontSize", "1.5em");
+        var btn = new ButtonField("Confirm").setStyle("fontSize", "1.3em").setStyle("marginTop", "1em");
         this.body.appendChild(btn);
         btn.addClickListener(fn);
     }

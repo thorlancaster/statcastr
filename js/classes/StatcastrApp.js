@@ -53,22 +53,23 @@ class StatcastrApp {
 		t.generateView("opponentStats", new TeamStatsView(t.model, false));
 		t.generateView("admin", new AdminView(t.model, t.synchronizrPtr, t.onAdminScoreboardUpdate.bind(t)));
 		// t.setView("scoreboard");
-		t.setView(Preferences.defaultView);
+		t.setView(Preferences.defaultView, true);
 		t.update();
 		if (eventId == null) // If no event is selected, ask the user to choose one
 			t.onViewSelected("eventList");
 		else {
-			t.synchronizr.setEventId(eventId, isAdmin); // Otherwise, begin syncing to the current event
-			if (isAdmin) // Admin must manually pull stats if they want to, otherwise they just push
+			synchronizr.setEventId(eventId, isAdmin); // Otherwise, begin syncing to the current event
+			if (isAdmin){ // Admin must manually pull stats if they want to, otherwise they just push
 				setTimeout(function () {
 					synchronizr.loadFromStorage(eventId);
 					synchronizr.beginHashValidation();
 				}, 0);
-			else // Fans must wait for the feed to load
+			} else // Fans must wait for the feed to load
 				t.showMainDialog("loadingStatsFeed", "Event Id: " + eventId);
 		}
 
 		// Allow the page to render before finishing
+		t.applyCSSPreferences();
 		setTimeout(function () {
 			t.onResize();
 			t.viewSelector.setSelected(t.selectedView);
@@ -91,6 +92,10 @@ class StatcastrApp {
 		var r1 = t.model.tick();
 		if (r1 || false) {
 			t.update();
+		}
+		if(t.model.clock.running){
+			t.model.invalidateDynamic(); // Make sure the clock stays in sync
+			t.synchronizr.updateFromModel(t.model, true);
 		}
 	}
 
@@ -123,9 +128,9 @@ class StatcastrApp {
 		console.log("1000 PBP reloads: " + (performance.now() - perf) + "ms");
 	}
 
-	onViewSelectedDirect(sel){ // Called by the TabSelector and nothing else
+	onViewSelectedDirect(sel) { // Called by the TabSelector and nothing else
 		this.onViewSelected(sel);
-		if(sel != "eventList" && sel != "help"){
+		if (sel != "eventList" && sel != "help") {
 			Preferences.defaultView = sel;
 			Preferences.save();
 		}
@@ -189,29 +194,41 @@ class StatcastrApp {
 
 	showMainDialog(dlg, arg2, arg3) {
 		var t = this;
-		if(dlg == "adminLogin"){
+		if (dlg == "adminLogin") {
 			var d = new Dialog("Log in");
-			var form = new PreferencesField(Credentials);
+			d.setId("adminLoginDlg");
+
+			var errStr = "";
+			if(arg2 == 1) errStr = "Incorrect Username / Password";
+			if(arg2 == 2) errStr = "Remote authentication failure<br/>Please log in again";
+			var badLbl = new TextField(errStr, true).setStyle("color", "#F00");
+			if (arg2) // arg2 = bad credentials
+				d.body.appendChild(badLbl);
+
+			var form = new PreferencesField(arg2 ? { username: "", password: "" } : Credentials);
 			d.body.appendChild(form);
 			var submitBtn = new ButtonField("Submit");
-			submitBtn.addClickListener(function(){
-				if(!form.isValid()){
+			submitBtn.addClickListener(function () {
+				if (!form.isValid()) {
 					new Toast("Invalid values");
 					return;
 				}
+				badLbl.setStyle("display", "none");
 				form.setStyle("display", "none");
 				submitBtn.setStyle("display", "none");
 				d.body.prependChild(new TextField("Verifying password...<br/><br/>", true));
 				d.body.prependChild(t.createLoadingField());
 				var overrideBtn = new ButtonField("Override Verification");
-				overrideBtn.addClickListener(function(){
-					alert("H4x0r");
+				overrideBtn.addClickListener(function () {
+					Credentials.setFrom(form.getState());
+					Credentials.save();
+					t.onAdminLoginDone();
+					d.close();
 				});
 				d.body.appendChild(overrideBtn);
 				// d.close();
 				var creds = form.getState();
-				
-				// TODO verify credentials with server
+				t.synchronizr.beginVerifyPassword(creds.username, creds.password);
 				console.log(creds);
 			});
 			d.body.appendChild(submitBtn);
@@ -262,13 +279,8 @@ class StatcastrApp {
 				t.eventTeam = tbl.getCell(2, row, false);
 				t.eventOpp = tbl.getCell(3, row, false);
 				t.synchronizr.setEventId(t.eventId);
-				t.evtSelDlg.remove();
-				var url = new URL(location.href);
-				var params = url.searchParams;
-				params.set("event", t.eventId);
-				url.search = params.toString();
-				console.log(url.toString());
-				history.replaceState("Statcastr", document.title, url.toString());
+				t.evtSelDlg.close();
+				t.modifyURL("event", t.eventId);
 				t.showMainDialog("loadingStatsFeed", t.eventTeam, t.eventOpp);
 			});
 
@@ -288,12 +300,12 @@ class StatcastrApp {
 				"<br/>To view the feed in different ways, select one of the tabs at the top.", true)
 				.setStyle("whiteSpace", "initial"));
 			var aboutBtn = new ButtonField("About Statcastr");
-			aboutBtn.addClickListener(function(){
+			aboutBtn.addClickListener(function () {
 				d.close();
 				t.showMainDialog("about");
 			});
 			var prefsBtn = new ButtonField("Preferences");
-			prefsBtn.addClickListener(function(){
+			prefsBtn.addClickListener(function () {
 				d.close();
 				t.showMainDialog("preferences");
 			});
@@ -304,20 +316,20 @@ class StatcastrApp {
 			d.body.appendChild(btns);
 			d.show();
 		}
-		else if(dlg == "about"){
+		else if (dlg == "about") {
 			var d = new Dialog("About Statcastr");
 			d.body.appendChild(new ImageField("resources/favicon/favicon-256.png").setStyle("height", "5em"));
 			d.body.appendChild(new TextField("Statcastr version " + Constants.version + "<br/>&#169;" + Constants.copyright +
-			"<br/>", true).setStyle("whiteSpace", "initial"));
+				"<br/>", true).setStyle("whiteSpace", "initial"));
 			d.show();
 		}
-		else if(dlg == "preferences"){
+		else if (dlg == "preferences") {
 			var d = new Dialog("Preferences");
 			var prefs = new PreferencesField(Preferences, Preferences.renameFn);
 			d.body.appendChild(prefs);
 			var submitBtn = new ButtonField("Submit");
-			submitBtn.addClickListener(function(){
-				if(!prefs.isValid()){
+			submitBtn.addClickListener(function () {
+				if (!prefs.isValid()) {
 					new Toast("Invalid values");
 					return;
 				}
@@ -331,6 +343,31 @@ class StatcastrApp {
 			d.show();
 		}
 		else console.warn("Unsupported ShowMainDialog " + dlg);
+	}
+
+	// Called when admin login is complete
+	// (either verified or overridden)
+	onAdminLoginDone() {
+		var t = this;
+		t.isAdmin = true;
+		t.modifyURL("admin", true); // Mark the URL as admin
+		t.onViewSelected("admin");
+		t.viewSelector.setSelected(t.selectedView); // Select the "Admin" tab
+		t.synchronizr.setEventId(t.eventId, true); // Log in and become the admin
+		t.synchronizr.beginHashValidation(); // Make sure everything is correct
+	}
+
+	/**
+	 * Modify a URL parameter without reloading the page
+	 * @param {String} k Key
+	 * @param {String} v Value
+	 */
+	modifyURL(k, v) {
+		var url = new URL(location.href);
+		var params = url.searchParams;
+		params.set(k, v);
+		url.search = params.toString();
+		history.replaceState("Statcastr", document.title, url.toString());
 	}
 
 	// Update the event selection table in the event selection dialog,
@@ -376,15 +413,17 @@ class StatcastrApp {
 		}
 	}
 
-	setView(vid) {
+	setView(vid, dontLogon) {
 		var t = this;
-		if(vid == "admin" && !t.isAdmin){
-			if(!t.selectedView){
+		if (vid == "admin" && !t.isAdmin) {
+			if (!t.selectedView) {
 				t.setView("scoreboard");
 			}
 			t.viewSelector.setSelected(t.selectedView);
-			new Toast("Login required");
-			t.showMainDialog("adminLogin");
+			if(!dontLogon){
+				new Toast("Login required");
+				t.showMainDialog("adminLogin");
+			}
 			return;
 		}
 		t.selectedView = vid;
@@ -416,13 +455,16 @@ class StatcastrApp {
 	onAdminScoreboardUpdate() {
 		this.update();
 	}
-	applyPreferences(){
+	applyPreferences() {
 		this.applyCSSPreferences();
 		this.onResize();
 		this.update();
 	}
-	applyCSSPreferences(){
-
+	applyCSSPreferences() {
+		var ars = this.appRoot.style;
+		var big = Preferences.enlargeFonts;
+		ars.setProperty("--mobile-font-sz", big ? "1em" : "0.75em");
+		ars.setProperty("--desktop-font-sz", big ? "1.1em" : "0.9em");
 	}
 	update() {
 		this.getSelectedView().update();
@@ -447,6 +489,37 @@ class StatcastrApp {
 	}
 
 	/* Stuff for Synchronizr compatibliity */
+	onSynchronizrVerification(result, uname, pw) {
+		console.log(result, uname, pw);
+		var bad = false;
+		if (Dialog.isOpenById("adminLoginDlg")) {
+			if (result) {
+				Credentials.username = uname;
+				Credentials.password = pw;
+				Credentials.save();
+				this.onAdminLoginDone();
+			} else {
+				bad = true;
+			}
+		}
+		Dialog.removeById("adminLoginDlg");
+		if (bad)
+			this.showMainDialog("adminLogin", 1);
+	}
+
+	onSynchronizrPreConn(){
+		
+	}
+
+	onSynchronizrError(op) {
+		var t = this, s = t.synchronizr;
+		if (op == s.op.ERROR_CREDENTIALS_BT || op == s.op.ERROR_NOTADMIN_BT) {
+			t.synchronizr.clearHashValidationPending();
+			t.synchronizr.reconnect();
+			t.showMainDialog("adminLogin", 2);
+		}
+	}
+
 	onSynchronizrUpdate(s, d, e, sd, dd, ed) {
 		var t = this;
 		var type = Synchronizr.byteArrToStr(sd[0]);

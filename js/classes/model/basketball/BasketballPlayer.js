@@ -60,14 +60,19 @@ class BasketballPlayer extends Player{
       var t = this;
       return t.points + t.rebounds + t.assists + t.steals + t.blocks - (t.fgMiss + t.ftMiss + t.turnovers);
     }
-    get playTime(){
-      var min = Math.floor(this.playMs / 60000);
-      var sec = Math.floor(this.playMs % 60000 / 1000);
-      var ms = this.playMs % 1000;
+    getPlayTime(msLeft){
+      var m = this.playMs;
+      if(msLeft && this.lastMs){
+        m += Math.max(0, this.lastMs - msLeft);
+      }
+      var min = Math.floor(m / 60000);
+      var sec = Math.floor(m % 60000 / 1000);
+      var ms = m % 1000;
       return{min: min, sec: sec, ms: ms};
     }
-    get playTimeStr(){
-      var p = this.playTime;
+
+    getPlayTimeStr(msLeft){
+      var p = this.getPlayTime(msLeft);
       if(p.sec < 10) return p.min + ":0" + p.sec; 
       else return p.min + ":" + p.sec; 
     }
