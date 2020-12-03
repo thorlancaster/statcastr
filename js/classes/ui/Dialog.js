@@ -41,6 +41,9 @@ class Dialog{
     setId(id){
         this.panel.element.id = id;
     }
+    appendChild(el){this.body.appendChild(el);}
+    prependChild(el){this.body.prependChild(el);}
+    removeChild(el){this.body.removeChild(el);}
     close(){
         var t = this;
         var res = t.onClose ? t.onClose() : null;
@@ -61,7 +64,9 @@ class Dialog{
         var t = this;
         t.panel.removeClass("showing");
         setTimeout(function(){
-            t.panel.element.parentElement.removeChild(t.panel.element);
+            var e = t.panel.element;
+            if(e.parentElement)
+                e.parentElement.removeChild(e);
         }, 150);
     }
     static isOpen(){

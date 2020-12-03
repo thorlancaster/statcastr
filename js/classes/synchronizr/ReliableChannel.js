@@ -144,9 +144,11 @@ class WebsocketReliableChannel extends ReliableChannel {
     handleWsClose(e) {
         var tm = Date.now();
         var t = this;
+        var portChanged = true;
         if(t.timer) clearInterval(t.timer);
         if (t.dbgTryPorts && e.code == 1006 && !t.everConnected && t.connPort - t.origConnPort <= t.dbgTryPorts) {
             t.connPort++;
+            portChanged = true;
             t.disconnect();
         }
         if(t.autoReconnect){
@@ -155,7 +157,7 @@ class WebsocketReliableChannel extends ReliableChannel {
             t.reconnTmr = setTimeout(function(){
                 if(t.autoReconnect)
                     t.connect();
-            }, 3000);
+            }, portChanged ? 0 :3000);
         }
     }
 

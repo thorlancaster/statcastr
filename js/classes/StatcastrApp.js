@@ -7,6 +7,7 @@ const Constants = {
 			scoreboardPeriod: { litColor: "#FD0" }
 		}
 	],
+	mascotPath: "resources/mascots/",
 	version: "0.5.2",
 	copyright: "2020 Thor Lancaster, all rights reserved"
 }
@@ -17,9 +18,9 @@ class StatcastrApp {
 	 * @param {Element} appRootEl Root element to place app in
 	 * @param {Synchronizr} synchronizr Synchronizr instance
 	 * @param {String} eventId Id of event to listen to. Can be null
-	 * @param {Boolean} isAdmin True for admin mode, false for spectator mode
+	 * @param {Boolean} isAdmin True for admin mode, false for spectator mode.
 	 */
-	constructor(appRootEl, synchronizr, eventId, isAdmin) {
+	constructor(appRootEl, synchronizr, eventId, isAdmin, wantsAdmin) {
 		var t = this;
 		assert(appRootEl != null, "App Root Element is required")
 		assert(synchronizr != null, "Synchronizr is required")
@@ -59,10 +60,11 @@ class StatcastrApp {
 			t.onViewSelected("eventList");
 		else {
 			synchronizr.setEventId(eventId, isAdmin); // Otherwise, begin syncing to the current event
-			if (isAdmin){ // Admin must manually pull stats if they want to, otherwise they just push
+			if (isAdmin || wantsAdmin) { // Admin must manually pull stats if they want to, otherwise they just push
 				setTimeout(function () {
-					synchronizr.loadFromStorage(eventId);
-					synchronizr.beginHashValidation();
+					synchronizr.loadFromStorage(eventId, true, t.model.getTemplate());
+					if (isAdmin)
+						synchronizr.beginHashValidation();
 				}, 0);
 			} else // Fans must wait for the feed to load
 				t.showMainDialog("loadingStatsFeed", "Event Id: " + eventId);
@@ -93,7 +95,7 @@ class StatcastrApp {
 		if (r1 || false) {
 			t.update();
 		}
-		if(t.model.clock.running){
+		if (t.model.clock.running) {
 			t.model.invalidateDynamic(); // Make sure the clock stays in sync
 			t.synchronizr.updateFromModel(t.model, true);
 		}
@@ -199,14 +201,14 @@ class StatcastrApp {
 			d.setId("adminLoginDlg");
 
 			var errStr = "";
-			if(arg2 == 1) errStr = "Incorrect Username / Password";
-			if(arg2 == 2) errStr = "Remote authentication failure<br/>Please log in again";
+			if (arg2 == 1) errStr = "Incorrect Username / Password";
+			if (arg2 == 2) errStr = "Remote authentication failure<br/>Please log in again";
 			var badLbl = new TextField(errStr, true).setStyle("color", "#F00");
 			if (arg2) // arg2 = bad credentials
-				d.body.appendChild(badLbl);
+				d.appendChild(badLbl);
 
 			var form = new PreferencesField(arg2 ? { username: "", password: "" } : Credentials);
-			d.body.appendChild(form);
+			d.appendChild(form);
 			var submitBtn = new ButtonField("Submit");
 			submitBtn.addClickListener(function () {
 				if (!form.isValid()) {
@@ -225,25 +227,33 @@ class StatcastrApp {
 					t.onAdminLoginDone();
 					d.close();
 				});
-				d.body.appendChild(overrideBtn);
+				d.appendChild(overrideBtn);
 				// d.close();
 				var creds = form.getState();
 				t.synchronizr.beginVerifyPassword(creds.username, creds.password);
 				console.log(creds);
 			});
-			d.body.appendChild(submitBtn);
+			d.appendChild(submitBtn);
 			d.show();
 		}
 		else if (dlg == "loadingStatsFeed") {
-			var d = new Dialog("&nbsp;Loading stats feed...&nbsp;");
+			var d = new Dialog("Loading stats feed...");
 			d.setId("loadingStatsDlg");
-			d.body.appendChild(new TextField("Please wait a few seconds<br/>Or press 'X' to choose another event", true).setStyle("textAlign", "center"));
+			d.appendChild(new TextField("Please wait a few seconds<br/>Or press 'X' to choose another event", true).setStyle("textAlign", "center"));
 			d.loading = t.createLoadingField();
-			d.body.appendChild(d.loading);
+			d.appendChild(d.loading);
 			if (arg2 && arg3)
-				d.body.appendChild(new TextField(arg2 + " &nbsp;-vs-&nbsp; " + arg3, true));
+				d.appendChild(new TextField(arg2 + " &nbsp;-vs-&nbsp; " + arg3, true));
 			else if (arg2)
-				d.body.appendChild(new TextField(arg2, true));
+				d.appendChild(new TextField(arg2, true));
+
+			if(t.isAdmin){
+				var cancel = new ButtonField("Override and go to admin");
+				cancel.addClickListener(function(){
+					d.remove();
+				});
+				d.appendChild(cancel);
+			}
 
 			d.onClose = function () {
 				t.synchronizr.reconnect();
@@ -251,12 +261,43 @@ class StatcastrApp {
 			}
 			d.show();
 		}
+		else if (dlg == "createNewEvent") {
+			var exList = EventListPrefs.events;
+			var exStr = exList ? ("" + exList).replace(',', ", ") : "None";
+			var d = new Dialog("Create new event");
+			var form = new PreferencesField({ eventId: "" }).setStyle("marginBottom", "0.5em");
+			var label = new TextField("Existing events: <br/>" + exStr, true).setStyle("marginBottom", "0.5em");
+			var submit = new ButtonField("Submit");
+			submit.addClickListener(function(){
+				var res = form.getState().eventId;
+				if(exList.includes(res)){
+					new Toast("Event already exists");
+					return;
+				}
+				d.close();
+				t.eventId = res;
+				t.eventTeam = "Unknown";
+				t.eventOpp = "Unknown";
+				t.synchronizr.setEventId(t.eventId, t.isAdmin);
+				t.synchronizr.loadFromStorage(t.eventId, true, t.model.getTemplate());
+				t.evtSelDlg.remove();
+				t.modifyURL("event", t.eventId);
+			});
+			d.appendChild(form);
+			d.appendChild(label);
+			d.appendChild(submit);
+			d.show();
+		}
 		else if (dlg == "eventList") {
 			var d = new Dialog("Loading event list...");
 			var tbl = new TableField(["ID", "Type", "Team", "Opponent", "Location", "Time", "Info"]);
-			d.body.appendChild(tbl);
+			var ovrBtn = new ButtonField("Create New Event")
+
+			d.appendChild(tbl);
 			d.loading = t.createLoadingField();
-			d.body.appendChild(d.loading);
+			d.appendChild(d.loading);
+			if (t.isAdmin)
+				d.appendChild(ovrBtn);
 
 			if (!t.eventId) {
 				d.closeBtn.setBgColor("var(--disabled-fg)");
@@ -267,9 +308,9 @@ class StatcastrApp {
 
 			var sd = t.synchronizr.staticData;
 			if (Synchronizr.byteArrToStr(sd[0]) == "list") {
-				t.updateEvtSelTbl(sd.slice(1));
+				t.updateEvtSelAll(sd.slice(1));
 			} else {
-				t.synchronizr.setEventId(null);
+				t.synchronizr.setEventId(null, false);
 			}
 
 			tbl.enableClickListener(function (row) {
@@ -278,10 +319,19 @@ class StatcastrApp {
 				t.eventId = tbl.getCell(0, row, false);
 				t.eventTeam = tbl.getCell(2, row, false);
 				t.eventOpp = tbl.getCell(3, row, false);
-				t.synchronizr.setEventId(t.eventId);
-				t.evtSelDlg.close();
+				t.synchronizr.setEventId(t.eventId, t.isAdmin);
+				if(t.isAdmin){
+					t.synchronizr.loadFromStorage(t.eventId);
+					t.synchronizr.beginHashValidation();
+				}
+				t.evtSelDlg.remove();
 				t.modifyURL("event", t.eventId);
 				t.showMainDialog("loadingStatsFeed", t.eventTeam, t.eventOpp);
+			});
+
+			ovrBtn.addClickListener(function () {
+				t.evtSelDlg.remove();
+				t.showMainDialog("createNewEvent");
 			});
 
 			d.onClose = function () {
@@ -289,14 +339,14 @@ class StatcastrApp {
 					new Toast("No Event Selected");
 					return false;
 				} else {
-					t.synchronizr.setEventId(t.eventId);
+					t.synchronizr.setEventId(t.eventId, t.isAdmin);
 					t.showMainDialog("loadingStatsFeed", t.eventTeam, t.eventOpp);
 				}
 			}
 			d.show();
 		} else if (dlg == "help") {
 			var d = new Dialog("Help");
-			d.body.appendChild(new TextField("Select \"Events\" From the top menu to select a feed to watch." +
+			d.appendChild(new TextField("Select \"Events\" From the top menu to select a feed to watch." +
 				"<br/>To view the feed in different ways, select one of the tabs at the top.", true)
 				.setStyle("whiteSpace", "initial"));
 			var aboutBtn = new ButtonField("About Statcastr");
@@ -312,21 +362,21 @@ class StatcastrApp {
 			var btns = new UIPanel();
 			btns.appendChild(aboutBtn);
 			btns.appendChild(prefsBtn);
-			d.body.appendChild(new UIPanel().setStyle("height", "3em"));
-			d.body.appendChild(btns);
+			d.appendChild(new UIPanel().setStyle("height", "3em"));
+			d.appendChild(btns);
 			d.show();
 		}
 		else if (dlg == "about") {
 			var d = new Dialog("About Statcastr");
-			d.body.appendChild(new ImageField("resources/favicon/favicon-256.png").setStyle("height", "5em"));
-			d.body.appendChild(new TextField("Statcastr version " + Constants.version + "<br/>&#169;" + Constants.copyright +
+			d.appendChild(new ImageField("resources/favicon/favicon-256.png").setStyle("height", "5em"));
+			d.appendChild(new TextField("Statcastr version " + Constants.version + "<br/>&#169;" + Constants.copyright +
 				"<br/>", true).setStyle("whiteSpace", "initial"));
 			d.show();
 		}
 		else if (dlg == "preferences") {
 			var d = new Dialog("Preferences");
 			var prefs = new PreferencesField(Preferences, Preferences.renameFn);
-			d.body.appendChild(prefs);
+			d.appendChild(prefs);
 			var submitBtn = new ButtonField("Submit");
 			submitBtn.addClickListener(function () {
 				if (!prefs.isValid()) {
@@ -339,7 +389,7 @@ class StatcastrApp {
 				t.applyPreferences();
 				new Toast("Preferences saved");
 			});
-			d.body.appendChild(submitBtn);
+			d.appendChild(submitBtn);
 			d.show();
 		}
 		else console.warn("Unsupported ShowMainDialog " + dlg);
@@ -370,6 +420,25 @@ class StatcastrApp {
 		history.replaceState("Statcastr", document.title, url.toString());
 	}
 
+	// Update the event selection table and the event list database entry
+	// given a response from Synchronizr
+	updateEvtSelAll(arr) {
+		var t = this;
+		t.updateEvtSelTbl(arr);
+		t.updateEvtSelDb(arr);
+	}
+
+	updateEvtSelDb(arr) {
+		var list = [];
+		for (var x = 0; x < arr.length; x++) {
+			var arrx = arr[x];
+			var r = this.parseSingleEventListing(arrx);
+			list.push(r.id);
+		}
+		EventListPrefs.events = list;
+		EventListPrefs.save();
+	}
+
 	// Update the event selection table in the event selection dialog,
 	// given a response from Synchronizr
 	updateEvtSelTbl(arr) {
@@ -381,36 +450,41 @@ class StatcastrApp {
 		if (tbl) {
 			tbl.setLength(arr.length);
 			for (var x = 0; x < arr.length; x++) {
-				var ptr = [0];
 				var arrx = arr[x];
-				var id = Synchronizr.byteArrToStr(Synchronizr.parseField(arrx, ptr));
-				var type = Synchronizr.byteArrToStr(Synchronizr.parseField(arrx, ptr));
-				var hInfo = Synchronizr.parseField(arrx, ptr);
-				var gInfo = Synchronizr.parseField(arrx, ptr);
-				var hPtr = [0];
-				var gPtr = [0];
-				var hTown = Synchronizr.byteArrToStr(Synchronizr.parseField(hInfo, hPtr));
-				var hMascot = Synchronizr.byteArrToStr(Synchronizr.parseField(hInfo, hPtr));
-				var hAbbr = Synchronizr.byteArrToStr(Synchronizr.parseField(hInfo, hPtr));
-
-				var gTown = Synchronizr.byteArrToStr(Synchronizr.parseField(gInfo, gPtr));
-				var gMascot = Synchronizr.byteArrToStr(Synchronizr.parseField(gInfo, gPtr));
-				var gAbbr = Synchronizr.byteArrToStr(Synchronizr.parseField(gInfo, gPtr));
-
-				var location = Synchronizr.byteArrToStr(Synchronizr.parseField(arrx, ptr));
-				var comments = Synchronizr.byteArrToStr(Synchronizr.parseField(arrx, ptr));
-				var startTime = Synchronizr.byteArrToStr(Synchronizr.parseField(arrx, ptr));
-				var gender = Synchronizr.byteArrToStr(Synchronizr.parseField(arrx, ptr));
+				var r = t.parseSingleEventListing(arrx);
 				// console.log(id, type, {hTown, hMascot, hAbbr}, {gTown, gMascot, gAbbr}, location, comments, startTime, gender);
-				tbl.setCell(0, x, "<span class='link'>" + id + "</a>", true);
-				tbl.setCell(1, x, gender + " " + type);
-				tbl.setCell(2, x, hAbbr + " " + hMascot);
-				tbl.setCell(3, x, gAbbr + " " + gMascot);
-				tbl.setCell(4, x, location);
-				tbl.setCell(5, x, startTime);
-				tbl.setCell(6, x, comments.length ? comments : "--");
+				tbl.setCell(0, x, "<span class='link'>" + r.id + "</a>", true);
+				tbl.setCell(1, x, r.gender + " " + r.type);
+				tbl.setCell(2, x, r.hAbbr + " " + r.hMascot);
+				tbl.setCell(3, x, r.gAbbr + " " + r.gMascot);
+				tbl.setCell(4, x, r.location);
+				tbl.setCell(5, x, r.startTime);
+				tbl.setCell(6, x, r.comments.length ? r.comments : "--");
 			}
 		}
+	}
+
+	parseSingleEventListing(arrx) {
+		var ptr = [0];
+		var id = Synchronizr.byteArrToStr(Synchronizr.parseField(arrx, ptr));
+		var type = Synchronizr.byteArrToStr(Synchronizr.parseField(arrx, ptr));
+		var hInfo = Synchronizr.parseField(arrx, ptr);
+		var gInfo = Synchronizr.parseField(arrx, ptr);
+		var hPtr = [0];
+		var gPtr = [0];
+		var hTown = Synchronizr.byteArrToStr(Synchronizr.parseField(hInfo, hPtr));
+		var hMascot = Synchronizr.byteArrToStr(Synchronizr.parseField(hInfo, hPtr));
+		var hAbbr = Synchronizr.byteArrToStr(Synchronizr.parseField(hInfo, hPtr));
+
+		var gTown = Synchronizr.byteArrToStr(Synchronizr.parseField(gInfo, gPtr));
+		var gMascot = Synchronizr.byteArrToStr(Synchronizr.parseField(gInfo, gPtr));
+		var gAbbr = Synchronizr.byteArrToStr(Synchronizr.parseField(gInfo, gPtr));
+
+		var location = Synchronizr.byteArrToStr(Synchronizr.parseField(arrx, ptr));
+		var comments = Synchronizr.byteArrToStr(Synchronizr.parseField(arrx, ptr));
+		var startTime = Synchronizr.byteArrToStr(Synchronizr.parseField(arrx, ptr));
+		var gender = Synchronizr.byteArrToStr(Synchronizr.parseField(arrx, ptr));
+		return {id, type, hTown, hMascot, hAbbr, gTown, gMascot, gAbbr, location, comments, startTime, gender};
 	}
 
 	setView(vid, dontLogon) {
@@ -420,7 +494,7 @@ class StatcastrApp {
 				t.setView("scoreboard");
 			}
 			t.viewSelector.setSelected(t.selectedView);
-			if(!dontLogon){
+			if (!dontLogon) {
 				new Toast("Login required");
 				t.showMainDialog("adminLogin");
 			}
@@ -507,24 +581,29 @@ class StatcastrApp {
 			this.showMainDialog("adminLogin", 1);
 	}
 
-	onSynchronizrPreConn(){
-		
+	onSynchronizrPreConn() {
+
 	}
 
 	onSynchronizrError(op) {
 		var t = this, s = t.synchronizr;
 		if (op == s.op.ERROR_CREDENTIALS_BT || op == s.op.ERROR_NOTADMIN_BT) {
 			t.synchronizr.clearHashValidationPending();
-			t.synchronizr.reconnect();
+			if(op != s.op.ERROR_CREDENTIALS_BT) // On credential error, don't blindly try and log on again
+				t.synchronizr.reconnect();
 			t.showMainDialog("adminLogin", 2);
 		}
+	}
+
+	onSynchronizrHvDone(){
+		Dialog.removeById("loadingStatsDlg");
 	}
 
 	onSynchronizrUpdate(s, d, e, sd, dd, ed) {
 		var t = this;
 		var type = Synchronizr.byteArrToStr(sd[0]);
 		if (type == "list") {
-			t.updateEvtSelTbl(sd.slice(1));
+			t.updateEvtSelAll(sd.slice(1));
 		}
 		else if (type == "bbgame") {
 			Dialog.removeById("loadingStatsDlg");
@@ -543,7 +622,7 @@ class StatcastrApp {
 			}
 			if (needsPbpRl)
 				t.model.reloadFromPBP();
-			if (d || e) // Dynamic clock has highest priority, so is last
+			if (s || d || e) // Dynamic clock has highest priority, so is last
 				t.model.updateDynamicData(dd);
 			t.update();
 		}

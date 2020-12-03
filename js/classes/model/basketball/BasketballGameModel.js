@@ -30,6 +30,19 @@ class BasketballGameModel extends GameModel {
 	}
 
 	/**
+	 * @returns Bytecode template for an uninitialized game model. Pass result to Synchronizr loadFromStorage()
+	 */
+	getTemplate(){
+		return {
+			static: [
+				new Uint8Array([98, 98, 103, 97, 109, 101]), // Type = bbgame
+			],
+			dynamic: [],
+			event: []
+		}
+	}
+
+	/**
 	 * Call every 100ms or so to tick the clock
 	 * @returns True if anything changed
 	 */

@@ -22,7 +22,8 @@ class Toast {
         el.tTmrId = setTimeout(function(){
             el.classList.add("ending");
             setTimeout(function(){
-                el.parentElement.removeChild(el);
+                if(el.parentElement)
+                    el.parentElement.removeChild(el);
             }, delay2);
         }, delay1);
     }

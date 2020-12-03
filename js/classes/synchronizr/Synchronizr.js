@@ -170,9 +170,9 @@ class Synchronizr {
 	}
 	onChannelOpen() {
 		var t = this;
-
-		t.invokePreConnectionCallback();
-		if (t.setEventIdPending) { // Set event ID if pending
+		var seip = false;
+		if (t.setEventIdPending || t.hashValidationPending) { // Set event ID if pending
+			seip = true;
 			t.setEventIdPending = false;
 			t.setEventId(t.eventId, t.isAdmin);
 		}
@@ -181,7 +181,6 @@ class Synchronizr {
 			t.beginVerifyPassword(t._vp_un, t._vp_pw);
 		}
 		if (t.hashValidationPending) { // Perform hash validation if pending
-
 			// t.hashValidationPending = false;
 			t.beginHashValidation(true);
 		}
@@ -224,6 +223,10 @@ class Synchronizr {
 	// Set the function that will be called immediately after the connection opens, but before the hash comparison
 	setPreConnectionCallback(f) {
 		this.precCbFn = f;
+	}
+
+	setHashValidationDoneCallback(f){
+		this.hvDoneCbFn = f;
 	}
 
 	// Set the function that will be called when an error occurs
@@ -353,12 +356,18 @@ class Synchronizr {
      * Loads an event from storage, and then optionally reloads the local state via updateLocal()
      * @param {String} eventId 
      * @param {Boolean} updateLocal True to update the local state. If omitted, defaults to true
+	 * @param {Object} template [Optional] If the event is not found, [static, dynamic, event] data will be copied from this object
      */
-	loadFromStorage(eventId, updateLocal) {
+	loadFromStorage(eventId, updateLocal, template) {
 		var t = this;
 		t.staticData = t.loadFromStorage0(eventId + "-s");
 		t.dynamicData = t.loadFromStorage0(eventId + "-d");
 		t.eventData = t.loadFromStorage0(eventId + "-e");
+		if(t.staticData.length == 0 && t.dynamicData.length == 0 && t.eventData.length == 0 && template){
+			t.staticData = [...template.static];
+			t.dynamicData = [...template.dynamic];
+			t.eventData = [...template.event];
+		}
 		if (updateLocal != false)
 			t.updateLocal(true, true, true);
 	}
@@ -426,6 +435,10 @@ class Synchronizr {
 		if (this.errCbFn)
 			this.errCbFn(errCode);
 	}
+	invokeHashValDoneCallback(){
+		if (this.hvDoneCbFn)
+			this.hvDoneCbFn();
+	}
 	invokePreConnectionCallback() {
 		if (this.precCbFn)
 			this.precCbFn();
@@ -463,7 +476,10 @@ class Synchronizr {
      */
 	beginHashValidation(noUpdate) {
 		var t = this;
-		assert(t.isAdmin, "Must be admin for beginHashValidation");
+		if(!t.isAdmin){
+			console.warn("Must be admin for beginHashValidation");
+			return;
+		}
 		if (!noUpdate) {
 			t._hv_sh = t.getHash(t.staticData).substring(0, 16);
 			t._hv_dh = t.getHash(t.dynamicData).substring(0, 16);
@@ -499,6 +515,7 @@ class Synchronizr {
 		if (!eSame) r.eventData.length = 0;
 		else r.eventData = [...t.eventData];
 		t.pushToTarget(0);
+		t.invokeHashValDoneCallback();
 	}
 	getHash(arr) {
 		var all = [];

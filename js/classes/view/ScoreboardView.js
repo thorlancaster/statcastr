@@ -11,9 +11,9 @@ class ScoreboardView extends View{
     var msc = t.viewDisp.mainScore;
     t.updatePFP(t.viewDisp.leftPFP, m.team.onCourt());
     t.updatePFP(t.viewDisp.rightPFP, m.opp.onCourt());
-    msc.homeImage.setSrc(m.team.image);
+    msc.homeImage.setSrc(m.team.getImagePath());
     msc.homeName.setText(m.team.name);
-    msc.guestImage.setSrc(m.opp.image);
+    msc.guestImage.setSrc(m.opp.getImagePath());
     msc.guestName.setText(m.opp.name);
     var ms = t.viewDisp.mainScore;
     var time = m.clock.getTime();

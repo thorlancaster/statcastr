@@ -29,7 +29,8 @@ class PreferencesClass {
         this.setFrom(o);
     }
     /**
-     * For all values in a given object, apply them to this Preferences object
+     * For all values in a given object, apply them to this Preferences object.
+     * This is not a deep copy
      * @param {Object} obj 
      */
     setFrom(obj){
@@ -81,5 +82,13 @@ class CredentialsPreferencesClass extends PreferencesClass{
     }
     hasCredentials(){
         return this.username.length + this.password.length > 0;
+    }
+}
+
+class EventListPreferencesClass extends PreferencesClass{
+    constructor(name){
+        super(name);
+        var t = this;
+        t.events = null;
     }
 }

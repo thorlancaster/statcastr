@@ -65,7 +65,10 @@ class AdminWidget extends UIPanel {
 		t.gameRosBtn = new ButtonField("Rosters");
 		t.gameRosBtn.addClickListener(t.onGameRosBtn.bind(t));
 		t.topPanel.appendChild(t.gameRosBtn);
-		t.switchTeamBtn = new ButtonField("<-Switch->");
+		t.gameEditBtn = new ButtonField("Edit");
+		t.gameEditBtn.addClickListener(t.onGameEditBtn.bind(t));
+		t.topPanel.appendChild(t.gameEditBtn);
+		t.switchTeamBtn = new ButtonField("Switch");
 		t.switchTeamBtn.addClickListener(t.onSwitchTeam.bind(t));
 		t.topPanel.appendChild(t.switchTeamBtn);
 		t.topPanel.appendChild(new UIPanel().setStyle("width", t.SPACER_SZ)
@@ -664,6 +667,21 @@ class AdminWidget extends UIPanel {
 		return Math.round(1000 * (parseInt(s1) * 60 + parseFloat(s2)));
 	}
 
+	onGameEditBtn() {
+		var t =  this;
+		var dlg = new Dialog("Edit Game");
+		var form = new PreferencesField(t.model.getEditData(), t.model.editDataRenameFunction);
+		var submit = new ButtonField("Submit");
+		submit.addClickListener(function () {
+			dlg.close();
+			t.model.putEditData(form.getState());
+			t.updateAll(1);
+		});
+		dlg.appendChild(form);
+		dlg.appendChild(submit);
+		dlg.show();
+	}
+
 	onGameRosBtn() {
 		var t = this;
 		var dlg = new Dialog("Edit Rosters");
@@ -695,12 +713,12 @@ class AdminWidget extends UIPanel {
 			t.vibrate(t.VIBE_SUCCESS);
 			dlg.remove();
 		});
-		dlg.body.appendChild(txt1);
-		dlg.body.appendChild(tbl1);
-		dlg.body.appendChild(new UIPanel().setStyle("height", "1em"));
-		dlg.body.appendChild(txt2);
-		dlg.body.appendChild(tbl2);
-		dlg.body.appendChild(submit);
+		dlg.appendChild(txt1);
+		dlg.appendChild(tbl1);
+		dlg.appendChild(new UIPanel().setStyle("height", "1em"));
+		dlg.appendChild(txt2);
+		dlg.appendChild(tbl2);
+		dlg.appendChild(submit);
 		tbl1.setValidator(t.rosValFn);
 		tbl2.setValidator(t.rosValFn);
 		t.rosLdFn(tbl1, t.model.team);
