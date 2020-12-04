@@ -6,8 +6,9 @@ class ReliableChannel {
         this.dcCallback = null; // Function to call on conn lost
         this.opCallback = null; // Function to call on conn established
         this.inCallback = null; // Function to call on conn initialized
+        this.staChgCallback = null; // Function to call on conn status change
         this.autoReconnect = true;
-        this.dbgTryPorts = 6; // How many ports up to try on failure
+        this.dbgTryPorts = 0; // How many ports up to try on failure
     }
     setReceiveCallback(cb) {
         this.rxCallback = cb;
@@ -21,6 +22,20 @@ class ReliableChannel {
     setInitCallback(cb) {
         this.inCallback = cb;
     }
+
+    /**
+     * Whenever readyState or bufferedAmount changes, the implementation shall call
+     * the provided function with the following parameters:
+     * readyState: 0 for connecting, 1 for open, 2 for closing or closed
+     * buffered: Number of bytes in buffer not yet sent over network
+     * status: One of "Connecting", "Disconnected", or (int) buffered
+     * 
+     * @param cb Callbback function
+     */
+    setStatusChangeCallback(cb){
+        this.staChgCallback = cb;
+    }
+
     setTarget(targ, port) {
         this.connTarget = targ;
         this.connPort = port;
@@ -60,7 +75,8 @@ class WebsocketReliableChannel extends ReliableChannel {
         super();
         var t = this;
         t.MAX_BUFFER_SZ = 10000;
-        t.TIMEOUT = 20000;
+        t.TIMEOUT = 20000; // How often to ping server or consider conn dropped
+        t.STA_INTERVAL = 500; // How often to check connection state
         t.ws = null;
         t.queue = [];
     }
@@ -72,6 +88,28 @@ class WebsocketReliableChannel extends ReliableChannel {
             if(t.timer) clearInterval(t.timer);
         } else {
             this.ws.send(' ');
+        }
+    }
+
+    /**
+     * Status tick function
+     * 
+     * Called once a second by a timer.
+     * It is a good idea to call this function whenever you make a change to the ws
+     */
+    staTick(){
+        var t = this, ws = t.ws;
+        var rs = ws ? ws.readyState : 2;
+        if(rs == 3) rs = 2;
+        var ba = ws ? ws.bufferedAmount : 0;
+        if(t._rs != rs || t._ba != ba){
+            t._rs = rs;
+            t._ba = ba;
+            var desc = ba;
+            if(rs == 2) desc = "Disconnected";
+            if(rs == 0) desc = "Connecting";
+            if(t.staChgCallback)
+                t.staChgCallback(rs, ba, desc);
         }
     }
 
@@ -94,6 +132,7 @@ class WebsocketReliableChannel extends ReliableChannel {
         if (!this.canWrite())
             console.warn("Shouldn't write right now");
         this.ws.send(msg);
+        this.staTick();
         console.info("[RC] TX " + msg);
     }
 
@@ -115,25 +154,32 @@ class WebsocketReliableChannel extends ReliableChannel {
         t.ws.addEventListener("message", function (e) {
             console.info("[RC] RX " + e.data);
             t.queue.push(e.data);
-            if (typeof t.rxCallback == "function")
+            if (t.rxCallback)
                 t.rxCallback();
         });
         t.ws.addEventListener("close", function (e) {
-            if (typeof t.dcCallback == "function")
+            if (t.dcCallback)
                 t.dcCallback();
             t.handleWsClose(e);
         });
         // t.ws.addEventListener("error", t.handleWsError.bind(t));
         t.ws.addEventListener("open", function (e) {
             t.everConnected = true;
-            if (typeof t.opCallback == "function")
+            t.staTick();
+            if (t.opCallback)
                 t.opCallback(t.connPort);
         });
         t.connAttemptTime = Date.now();
+        if(t.staTimer) clearInterval(t.staTimer);
+        t.staTimer = setInterval(t.staTick.bind(t), t.STA_INTERVAL);
+
         if(t.timer) clearInterval(t.timer);
         t.timer = setInterval(t.tick.bind(t), t.TIMEOUT);
-        if (typeof t.inCallback == "function")
+
+        if (t.inCallback)
             t.inCallback();
+        
+        t.staTick();
     }
 
     reconnect() {
@@ -159,10 +205,12 @@ class WebsocketReliableChannel extends ReliableChannel {
                     t.connect();
             }, portChanged ? 0 :3000);
         }
+        t.staTick();
     }
 
     disconnect() {
         if (this.ws)
             this.ws.close();
+        this.staTick();
     }
 }

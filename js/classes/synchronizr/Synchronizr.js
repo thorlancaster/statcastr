@@ -30,6 +30,7 @@ function SYNCHRONIZR_OPCODES() {
 	op.ERROR_UNKNOWN = "?";
 	op.ERROR_CREDENTIALS = "C";
 	op.ERROR_NOTADMIN = "A";
+	op.ERROR_NOTFOUND = "4";
 
 	op.NULL_BT = op.NULL.charCodeAt(0);
 	op.EOF_BT = op.EOF.charCodeAt(0);
@@ -58,6 +59,7 @@ function SYNCHRONIZR_OPCODES() {
 	op.ERROR_UNKNOWN_BT = op.ERROR_UNKNOWN.charCodeAt(0);
 	op.ERROR_CREDENTIALS_BT = op.ERROR_CREDENTIALS.charCodeAt(0);
 	op.ERROR_NOTADMIN_BT = op.ERROR_NOTADMIN.charCodeAt(0);
+	op.ERROR_NOTFOUND_BT = op.ERROR_NOTFOUND.charCodeAt(0);
 
 	return op;
 }
@@ -145,6 +147,7 @@ class Synchronizr {
 			c.setReceiveCallback(t.onChannelReceive.bind(t));
 			c.setCloseCallback(t.onChannelClose.bind(t));
 			c.setOpenCallback(t.onChannelOpen.bind(t));
+			c.setStatusChangeCallback(t.onChannelStaChg.bind(t));
 		}
 	}
 
@@ -156,6 +159,10 @@ class Synchronizr {
 	}
 	onChannelMessage(txt) {
 		this.applyOpcodes(txt);
+	}
+	onChannelStaChg(x, y, z){
+		if(this.staChgCallback)
+			this.staChgCallback(x, y, z);
 	}
 	onChannelClose() {
 		var t = this;
@@ -229,6 +236,11 @@ class Synchronizr {
 		this.hvDoneCbFn = f;
 	}
 
+	// See ReliableChannel
+    setStatusChangeCallback(cb){
+        this.staChgCallback = cb;
+	}
+
 	// Set the function that will be called when an error occurs
 	setErrorCallback(f) {
 		this.errCbFn = f;
@@ -249,9 +261,9 @@ class Synchronizr {
 		else {
 			if (isAdmin) {
 				t.channel.write(
+					t.op.REQUEST_ADMIN + t.getCredential() +
 					t.op.SET_ID +
-					t.toStr(id == null ? "" : id) +
-					t.op.REQUEST_ADMIN + t.getCredential());
+					t.toStr(id == null ? "" : id));
 			} else {
 				t.channel.write(t.op.SET_ID + t.toStr(id == null ? "" : id) + t.op.BEGIN_SYNC);
 			}

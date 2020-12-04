@@ -247,9 +247,9 @@ class StatcastrApp {
 			else if (arg2)
 				d.appendChild(new TextField(arg2, true));
 
-			if(t.isAdmin){
+			if (t.isAdmin) {
 				var cancel = new ButtonField("Override and go to admin");
-				cancel.addClickListener(function(){
+				cancel.addClickListener(function () {
 					d.remove();
 				});
 				d.appendChild(cancel);
@@ -268,9 +268,9 @@ class StatcastrApp {
 			var form = new PreferencesField({ eventId: "" }).setStyle("marginBottom", "0.5em");
 			var label = new TextField("Existing events: <br/>" + exStr, true).setStyle("marginBottom", "0.5em");
 			var submit = new ButtonField("Submit");
-			submit.addClickListener(function(){
+			submit.addClickListener(function () {
 				var res = form.getState().eventId;
-				if(exList.includes(res)){
+				if (exList.includes(res)) {
 					new Toast("Event already exists");
 					return;
 				}
@@ -291,7 +291,13 @@ class StatcastrApp {
 		else if (dlg == "eventList") {
 			var d = new Dialog("Loading event list...");
 			var tbl = new TableField(["ID", "Type", "Team", "Opponent", "Location", "Time", "Info"]);
-			var ovrBtn = new ButtonField("Create New Event")
+			var ovrBtn = new ButtonField("Create New Event");
+
+			var errStr = "";
+			if (arg2 == 1) errStr = "The event provided does not exist";
+			var badLbl = new TextField(errStr, true).setStyle("color", "#F00");
+			if (arg2) // arg2 = bad event
+				d.appendChild(badLbl);
 
 			d.appendChild(tbl);
 			d.loading = t.createLoadingField();
@@ -320,7 +326,7 @@ class StatcastrApp {
 				t.eventTeam = tbl.getCell(2, row, false);
 				t.eventOpp = tbl.getCell(3, row, false);
 				t.synchronizr.setEventId(t.eventId, t.isAdmin);
-				if(t.isAdmin){
+				if (t.isAdmin) {
 					t.synchronizr.loadFromStorage(t.eventId);
 					t.synchronizr.beginHashValidation();
 				}
@@ -484,7 +490,7 @@ class StatcastrApp {
 		var comments = Synchronizr.byteArrToStr(Synchronizr.parseField(arrx, ptr));
 		var startTime = Synchronizr.byteArrToStr(Synchronizr.parseField(arrx, ptr));
 		var gender = Synchronizr.byteArrToStr(Synchronizr.parseField(arrx, ptr));
-		return {id, type, hTown, hMascot, hAbbr, gTown, gMascot, gAbbr, location, comments, startTime, gender};
+		return { id, type, hTown, hMascot, hAbbr, gTown, gMascot, gAbbr, location, comments, startTime, gender };
 	}
 
 	setView(vid, dontLogon) {
@@ -541,7 +547,9 @@ class StatcastrApp {
 		ars.setProperty("--desktop-font-sz", big ? "1.1em" : "0.9em");
 	}
 	update() {
+		// var t1 = performance.now();
 		this.getSelectedView().update();
+		// console.log("Update() took ms: " + (performance.now() - t1));
 	}
 
 	onResize() {
@@ -585,17 +593,28 @@ class StatcastrApp {
 
 	}
 
+	onSynchronizrStatusChange(readyState, buffered, status){
+		var t = this;
+		t.model.connStatus = {readyState, buffered, status};
+		t.update();
+	}
+
 	onSynchronizrError(op) {
 		var t = this, s = t.synchronizr;
 		if (op == s.op.ERROR_CREDENTIALS_BT || op == s.op.ERROR_NOTADMIN_BT) {
 			t.synchronizr.clearHashValidationPending();
-			if(op != s.op.ERROR_CREDENTIALS_BT) // On credential error, don't blindly try and log on again
+			if (op != s.op.ERROR_CREDENTIALS_BT) // On credential error, don't blindly try and log on again
 				t.synchronizr.reconnect();
-			t.showMainDialog("adminLogin", 2);
+			if (!Dialog.isOpenById("adminLoginDlg"))
+				t.showMainDialog("adminLogin", 2);
+		}
+		else if (op == s.op.ERROR_NOTFOUND_BT) {
+			Dialog.removeById("loadingStatsDlg");
+			t.showMainDialog("eventList", 1);
 		}
 	}
 
-	onSynchronizrHvDone(){
+	onSynchronizrHvDone() {
 		Dialog.removeById("loadingStatsDlg");
 	}
 

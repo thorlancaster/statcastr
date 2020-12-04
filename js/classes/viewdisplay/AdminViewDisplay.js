@@ -76,6 +76,8 @@ class AdminWidget extends UIPanel {
 		t.connStatus = new ProgressBarField("Conn Status");
 		t.connStatus.setColors("#555", "var(--main-bg2)");
 		t.connStatus.setProgress(75);
+		t.connStatus.setStyle("width", "30%");
+		t.connStatus.setStyle("flexGrow", "0");
 		t.topPanel.appendChild(t.connStatus);
 		// Spacer1
 		t.spacer1 = new UIPanel().setStyle("background", "var(--main-bg2)")
@@ -83,7 +85,7 @@ class AdminWidget extends UIPanel {
 		t.appendChild(t.spacer1);
 		t.actionBtns = []; // Array with all the action buttons in it
 		var ab = t.actionBtns;
-		ab.push(t.gameRosBtn, t.switchTeamBtn);
+		ab.push(t.gameRosBtn, t.gameEditBtn, t.switchTeamBtn);
 
 		// Player selection buttons. Kept out of the way of drunken fingers
 		t.playerSelLbNum = new UIPanel().setStyle("flexDirection", "row").setStyle("fontSize", "1.2em");
@@ -160,7 +162,32 @@ class AdminWidget extends UIPanel {
 		super.update();
 		var t = this;
 		t.pdt.setStateFromModel(t.model);
+		t.updateConnStatus();
 		t.updateCkBtnSelState();
+	}
+
+	updateConnStatus() {
+		var sta = this.model.connStatus;
+		var el = this.connStatus;
+		if (!sta) return;
+		if (sta.readyState == 0) {
+			el.setColors("#932", "var(--main-bg2)");
+			el.setProgress(100);
+			el.setText("Connecting");
+		}
+		else if (sta.readyState == 2) {
+			el.setColors("#932", "var(--main-bg2)");
+			el.setProgress(100);
+			el.setText("Disconnected");
+		}
+		else {
+			el.setColors("#293", "var(--main-bg2)");
+			if (sta.buffered)
+				el.setText(sta.buffered + " bytes left");
+			else
+				el.setText("Connected");
+			el.setProgress((500 - sta.buffered) / 5);
+		}
 	}
 
 	vibrate(pattern) {
@@ -382,13 +409,13 @@ class AdminWidget extends UIPanel {
 			var cms = clk.millisLeft;
 			// Submit subs and update PBP after all but last play
 			var totLen = Math.max(subIn.length, subOut.length);
-			for (var x = 0; x < totLen; x++){
+			for (var x = 0; x < totLen; x++) {
 				var numIn = subIn[Math.min(x, subIn.length - 1)];
 				var numOut = subOut[Math.min(x, subOut.length - 1)];
 				var pItm = new BasketballPBPItem(t.entryPd, t.entryMs, numIn, t.selTeam, bpt.SUB, numOut);
-				if(x > 0) pItm.setLinked(true);
+				if (x > 0) pItm.setLinked(true);
 				t.model.pbp.addPlay(pItm);
-				if(x < totLen - 1)
+				if (x < totLen - 1)
 					t.model.updateFromPBP(); // Update last PBP before adding another
 			}
 			clk.period = cpd;
@@ -406,8 +433,13 @@ class AdminWidget extends UIPanel {
 		t.clearAction();
 	}
 	onExpandAction() {
+		var t = this;
+		var plyrs = t.selTeam ? t.model.team.players : t.model.opp.players;
+		var color = t.selTeam ? "var(--team-color1)" : "var(--opp-color1)";
+		t.setPlayerEntry(plyrs, color, true, false);
 		// TODO Expand options for this action, e.g. allow bench players to be chosen for stats.
 		// Actions using expand() may produce multiple PBP plays and should set linked=true on second play
+
 	}
 	onBackAction() {
 		this.clearAction();
@@ -442,7 +474,7 @@ class AdminWidget extends UIPanel {
 			t.vibrate(t.VIBE_SUCCESS);
 		});
 		var pbpInfo = m.getPBPInfo(m.pbp.plays[m.pbp.plays.length - 1], Preferences.playersAreColored, true);
-		while(pbpInfo){
+		while (pbpInfo) {
 			d.body.prependChild(new TextField(pbpInfo.time + "&emsp;" + pbpInfo.play, true));
 			pbpInfo = pbpInfo.linked;
 		}
@@ -517,7 +549,7 @@ class AdminWidget extends UIPanel {
 	}
 
 	setPlayerEntry(plyrs, c, b, multi, multis) {
-		// Set the player entry fields with {players, color, includeBench}
+		// Set the player entry fields with {players, color, includeBench, allowMulti, existingSelectionForMulti}
 		this.playerSel.setPlayers(plyrs, c, b, multi, multis);
 	}
 	onSubX() {
@@ -557,11 +589,17 @@ class AdminWidget extends UIPanel {
 		// Called when the clock toggle button is held
 		// Shows dialog for setting the clock
 		var t = this, c = this.model.clock;
-		t.showSetClockDialog(function (pd, ms) {
+		t.showSetClockDialog(function (pd, ms, addPlay) {
 			c.period = pd;
 			c.millisLeft = ms;
 			// TODO add new play and (4)
-			t.updateAll(4);
+			if (addPlay) {
+				var pItm = new BasketballPBPItem(pd, ms, 0, null, BasketballPlayType.SET_CLOCK);
+				t.model.pbp.addPlay(pItm);
+				t.updateAll(3);
+			} else {
+				t.updateAll(4);
+			}
 		}, c);
 	}
 
@@ -622,27 +660,33 @@ class AdminWidget extends UIPanel {
 		}
 	}
 
-	showSetClockDialog(callback, clk) {
+	showSetClockDialog(callback, clk) { // TODO should a SET_CLOCK play be added (checkbox)
 		var t = this;
 		var time = clk.getTime();
 		var ms0 = clk.millisLeft;
 		console.log(time);
 		var tStr = time.minutes + ":" + (time.seconds < 10 ? '0' : '') + (time.seconds + Math.round(time.millis / 100) / 10);
 		var d = new Dialog("Set Clock");
-		var pd = new UIPanel().setStyle("fontSize", "1.5em");
+		d.body.setStyle("fontSize", "1.3em");
+		var pd = new UIPanel();
 		pd.appendChild(new TextField("Period").setStyle("width", "40%").setStyle("flexGrow", "0"));
 		var f1 = new EditTextField(clk.period, 9);
 		pd.appendChild(f1);
-		var tm = new UIPanel().setStyle("fontSize", "1.5em");
+		var tm = new UIPanel();
 		tm.appendChild(new TextField("Time").setStyle("width", "40%").setStyle("flexGrow", "0"));
 		var f2 = new EditTextField(tStr, 9);
 		tm.appendChild(f2);
-		var bth = new UIPanel().setStyle("marginTop", "0.5em").setStyle("fontSize", "1.5em");
+		var chkh = new UIPanel().setStyle("marginTop", "0.5em");
+		var chk = new CheckboxField();
+		chkh.appendChild(new TextField("Add play"))
+		chkh.appendChild(chk);
+		var bth = new UIPanel().setStyle("marginTop", "0.5em");
 		var btn = new ButtonField("Submit");
 		bth.appendChild(btn);
-		d.body.appendChild(pd);
-		d.body.appendChild(tm);
-		d.body.appendChild(bth);
+		d.appendChild(pd);
+		d.appendChild(tm);
+		d.appendChild(chkh);
+		d.appendChild(bth);
 		btn.addClickListener(function () {
 			var pd = parseInt(f1.getText());
 			var ms = ms0;
@@ -652,7 +696,7 @@ class AdminWidget extends UIPanel {
 				new Toast("Invalid time");
 				return;
 			}
-			callback(pd, ms);
+			callback(pd, ms, chk.getValue());
 			d.remove();
 		});
 		d.show();
@@ -668,7 +712,7 @@ class AdminWidget extends UIPanel {
 	}
 
 	onGameEditBtn() {
-		var t =  this;
+		var t = this;
 		var dlg = new Dialog("Edit Game");
 		var form = new PreferencesField(t.model.getEditData(), t.model.editDataRenameFunction);
 		var submit = new ButtonField("Submit");
