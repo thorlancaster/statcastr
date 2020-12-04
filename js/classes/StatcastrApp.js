@@ -8,7 +8,7 @@ const Constants = {
 		}
 	],
 	mascotPath: "resources/mascots/",
-	version: "0.5.2",
+	version: "0.9.9",
 	copyright: "2020 Thor Lancaster, all rights reserved"
 }
 
