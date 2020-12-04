@@ -110,9 +110,9 @@ class GameModel {
 	/**
 	 * @returns an Object one level deep, suitable for passing to a PreferencesField to edit the game stats
 	 */
-	getEditData(){
+	getEditData() {
 		var t = this;
-		return{
+		return {
 			hTown: t.team.town,
 			hName: t.team.name,
 			hAbbr: t.team.abbr,
@@ -131,25 +131,25 @@ class GameModel {
 	 * Applies an object (from getEditData) to this GameModel's state
 	 * @param obj Object from getEditData
 	 */
-	putEditData(obj){
+	putEditData(obj) {
 		var t = this;
-		if(!obj) return;
-		if(obj.hTown) t.team.town = obj.hTown;
-		if(obj.hName) t.team.name = obj.hName;
-		if(obj.hAbbr) t.team.abbr = obj.hAbbr;
-		if(obj.hImg) t.team.image = obj.hImg;
-		if(obj.gTown) t.opp.town = obj.gTown;
-		if(obj.gName) t.opp.name = obj.gName;
-		if(obj.gAbbr) t.opp.abbr = obj.gAbbr;
-		if(obj.gImg) t.opp.image = obj.gImg;
-		if(obj.gender) t.gender = obj.gender;
-		if(obj.location) t.location = obj.location;
-		if(obj.startTime) t.startTime = obj.startTime;
-		if(obj.desc) t.desc = obj.desc;
+		if (!obj) return;
+		if (obj.hTown) t.team.town = obj.hTown;
+		if (obj.hName) t.team.name = obj.hName;
+		if (obj.hAbbr) t.team.abbr = obj.hAbbr;
+		if (obj.hImg) t.team.image = obj.hImg;
+		if (obj.gTown) t.opp.town = obj.gTown;
+		if (obj.gName) t.opp.name = obj.gName;
+		if (obj.gAbbr) t.opp.abbr = obj.gAbbr;
+		if (obj.gImg) t.opp.image = obj.gImg;
+		if (obj.gender) t.gender = obj.gender;
+		if (obj.location) t.location = obj.location;
+		if (obj.startTime) t.startTime = obj.startTime;
+		if (obj.desc) t.desc = obj.desc;
 	}
 
-	editDataRenameFunction(name){
-		switch(name){
+	editDataRenameFunction(name) {
+		switch (name) {
 			case "hTown": return "Team Town";
 			case "hName": return "Team Mascot";
 			case "hAbbr": return "Team Abbr.";
@@ -411,13 +411,12 @@ class Team {
 	/**
 	 * Get the path
 	 */
-	getImagePath(){
+	getImagePath() {
 		var i = this.image;
-		if(i.includes('/')) // Full path
+		if (i.includes('/')) // Full path
 			return i;
 		return Constants.mascotPath + i;
 	}
-
 
 	addPlayer(p) {
 		this.players[p.id] = p;
@@ -470,6 +469,45 @@ class Team {
 			rtn += this.players[x][name];
 		}
 		return rtn;
+	}
+
+	onCourt() { // Moved from BasketballTeam.js
+		var rtn = [];
+		for (var x in this.players) {
+			if (this.players[x].onCourt)
+				rtn.push(this.players[x]);
+		}
+		return rtn;
+	}
+
+	onCourtIds(){
+		var rtn = [];
+		var pls = this.onCourt();
+		for(var x in pls)
+			rtn.push(pls[x].id);
+		return rtn;
+	}
+
+	/**
+	 * @param {Array<PBPItem>} pbp Play-by-play array
+	 * @param {Boolean} whichTeam True for team, False for opponent
+	 * @returns The player on the court who has least recently played. A usefull heuristic for emergency substitutions.
+	 */
+	getLeastActive(pbp, whichTeam) {
+		debugger;
+		var pls = [...this.onCourtIds()];
+		for(var x = pbp.length - 1; x >= 0; x--){
+			var play = pbp[x];
+			if(play.team == whichTeam){
+				var idx = pls.indexOf(play.pid);
+				if(idx >= 0){
+					pls.splice(idx, 1);
+				}
+				if(pls.length == 1)
+					break;
+			}
+		}
+		return this.players[pls[0]];
 	}
 }
 

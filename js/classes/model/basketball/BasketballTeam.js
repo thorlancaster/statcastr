@@ -77,15 +77,6 @@ class BasketballTeam extends Team{
         this.addPlayer(new BasketballPlayer(p.id, p.name));
       }
     }
-  
-    onCourt(){
-      var rtn = [];
-      for(var x in this.players){
-        if(this.players[x].onCourt)
-          rtn.push(this.players[x]);
-      }
-      return rtn;
-    }
   }
   
   

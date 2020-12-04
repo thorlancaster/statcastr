@@ -424,8 +424,21 @@ class AdminWidget extends UIPanel {
 			t.updateAll(3);
 		}
 		else {
-			t.model.pbp.addPlay(new BasketballPBPItem(t.entryPd, t.entryMs, t.selPlayers[0], t.selTeam, playType));
-			new Toast("Submitted: " + BasketballPlayType.toLongStr(playType) + " " + t.selPlayers[0]);
+			var sub = false;
+			var plyr = t.selPlayers[0];
+			var team = t.selTeam ? t.model.team : t.model.opp;
+			if(!team.onCourtIds().includes(plyr)){
+				sub = true;
+				var numOut = team.getLeastActive(t.model.pbp.plays, t.selTeam).id;
+				var subPlay = new BasketballPBPItem(t.entryPd, t.entryMs, plyr, t.selTeam, bpt.SUB, numOut);
+				t.model.pbp.addPlay(subPlay);
+				t.model.updateFromPBP();
+			}
+			var play = new BasketballPBPItem(t.entryPd, t.entryMs, plyr, t.selTeam, playType);
+			if(sub)
+				play.setLinked(true);
+			t.model.pbp.addPlay(play);
+			new Toast("Submitted: " + BasketballPlayType.toLongStr(playType) + " " + plyr + (sub ? " [SUB REQUIRED]" : ""));
 			t.updateAll(3);
 		}
 
@@ -437,9 +450,7 @@ class AdminWidget extends UIPanel {
 		var plyrs = t.selTeam ? t.model.team.players : t.model.opp.players;
 		var color = t.selTeam ? "var(--team-color1)" : "var(--opp-color1)";
 		t.setPlayerEntry(plyrs, color, true, false);
-		// TODO Expand options for this action, e.g. allow bench players to be chosen for stats.
-		// Actions using expand() may produce multiple PBP plays and should set linked=true on second play
-
+		t.selPlayers = t.playerSel.setFilter(t.entryNum2, t.entryNum1);
 	}
 	onBackAction() {
 		this.clearAction();
@@ -822,7 +833,8 @@ class AdminWidget extends UIPanel {
 			sts.length = 0;
 			for (var x = 0; x < arr.length; x++) {
 				pls[arr[x].nbr] = new team.PLAYER_CLASS(arr[x].nbr, arr[x].nam);
-				sts.push(arr[x].nbr);
+				if(arr[x].sta)
+					sts.push(arr[x].nbr);
 			}
 		}
 		return false;
