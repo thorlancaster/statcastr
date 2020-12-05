@@ -1,65 +1,34 @@
-// Loads the scripts required for the web app.
-// TODO These scripts should be bundled and minified for production
+// Loads the scripts required for the web app
+// This is the bundled version for the production app
 
 // Constants
-var DEBUG = true; // Comment out for production
+var DEBUG = false;
 var APP_ROOT = "main";
 
 class Initializer {
   init(){
     var t = this;
     t.setLoader(true);
-    // Load dependencies
-    t.scriptLoader = new ScriptLoader(t.run.bind(t));
-    var l = t.scriptLoader;
-    // SCRIPTS
-    // Dependencies
-    l.loadScript("js/libs/utils.js");
-    l.loadScript("js/classes/MD5.js");
-    // UI
-    l.loadScript("js/classes/ui/UIPanel.js");
-    l.loadScript("js/classes/ui/TextField.js");
-    l.loadScript("js/classes/ui/ImageField.js");
-    l.loadScript("js/classes/ui/NumberField.js");
-    l.loadScript("js/classes/ui/TableField.js");
-    l.loadScript("js/classes/ui/TabSelector.js");
-    // Main
-    // l.loadScript("js/classes/model/GameModel.js");
-    // l.loadScript("js/classes/model/basketball/BasketballGameModel.js");
-    // l.loadScript("js/classes/model/basketball/BasketballPlayType.js");
-    // l.loadScript("js/classes/model/basketball/BasketballPBP.js");
-    l.loadScript("js/classes/synchronizr/ReliableChannel.js");
-    l.loadScript("js/classes/synchronizr/SynchronizrMain.js");
-    l.loadScript("js/classes/synchronizr/Synchronizr.js");
-
-    // STYLES
-    t.loadStyle("css/main.css");
-
+    // Start application when loaded
+    window.addEventListener("load", t.run.bind(t));
     window.addEventListener("resize", function(e){if(MAIN.onResize) MAIN.onResize(e);});
     window.addEventListener("focus", function(e){if(MAIN.onFocus) MAIN.onFocus(e);});
     window.addEventListener("blur", function(e){if(MAIN.onBlur) MAIN.onBlur(e);});
-    window.addEventListener("keydown", function(e){if(MAIN.keyDown) MAIN.keyDown(e);});
-    window.addEventListener("keyup", function(e){if(MAIN.keyUp) MAIN.keyUp(e);});
+    window.addEventListener("keydown", function(e){if(MAIN.onKey) MAIN.onKey(e);});
+    window.addEventListener("keyup", function(e){if(MAIN.onKey) MAIN.onKey(e);});
   }
 
   run(){
     var t = this;
     try{
-      window.MAIN = new SynchronizrMain();
-      MAIN.init(APP_ROOT);
+      window.MAIN = new Main();
+      window.SC = window.MAIN.sc;
       t.setLoader(false);
     }
     catch(e){
       console.error(e);
       t.setLoader("Error<br/>See console for details");
     }
-  }
-
-  loadStyle(src){
-    var el = document.createElement("link");
-    el.rel = "stylesheet";
-    el.href = src;
-    document.head.appendChild(el);
   }
 
   setLoader(v){
@@ -121,5 +90,15 @@ class ScriptLoader{
   }
 }
 
+// Initialize app
 var initializer = new Initializer();
 initializer.init();
+
+// Register service worker
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').then(function(reg) {
+        console.log('Successfully registered service worker', reg);
+    }).catch(function(err) {
+        console.warn('Error while registering service worker', err);
+    });
+}

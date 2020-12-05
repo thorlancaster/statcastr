@@ -25,12 +25,12 @@ class Initializer {
     l.loadScript("js/classes/model/basketball/BasketballSubStats.js");
     l.loadScript("js/classes/model/basketball/BasketballTeam.js");
     // UI
-    l.loadScript("js/classes/ui/UIPanel.js");
+    l.loadScript("js/classes/ui/1-UIPanel.js");
+    l.loadScript("js/classes/ui/2-TextField.js");
     l.loadScript("js/classes/ui/Dialog.js");
     l.loadScript("js/classes/TouchManager.js");
     l.loadScript("js/classes/ui/Toast.js");
     l.loadScript("js/classes/ui/ButtonField.js");
-    l.loadScript("js/classes/ui/TextField.js");
     l.loadScript("js/classes/ui/CheckboxField.js");
     l.loadScript("js/classes/ui/ProgressBarField.js");
     l.loadScript("js/classes/ui/ImageField.js");
@@ -39,15 +39,15 @@ class Initializer {
     l.loadScript("js/classes/ui/PreferencesField.js");
     l.loadScript("js/classes/ui/TabSelector.js");
     // Components
+    l.loadScript("js/classes/components/1-ViewDisplay.js");
     l.loadScript("js/classes/components/DisplayTable.js");
     l.loadScript("js/classes/components/PBPDisplayTable.js");
     l.loadScript("js/classes/components/PeriodTabSelector.js");
     l.loadScript("js/classes/components/ScoreDisplayHeader.js");
-    l.loadScript("js/classes/components/ViewDisplay.js");
     l.loadScript("js/classes/components/TabbedViewDisplay.js");
     l.loadScript("js/classes/components/TeamStatsDisplayTable.js");
     // View
-    l.loadScript("js/classes/view/View.js");
+    l.loadScript("js/classes/view/1-View.js");
     l.loadScript("js/classes/view/ScoreboardView.js");
     l.loadScript("js/classes/view/TeamStatsView.js");
     l.loadScript("js/classes/view/PlayByPlayView.js");
