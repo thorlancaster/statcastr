@@ -79,9 +79,18 @@ class CredentialsPreferencesClass extends PreferencesClass{
         var t = this;
         t.username = "";
         t.password = "";
+        t.admin = false;
     }
     hasCredentials(){
         return this.username.length + this.password.length > 0;
+    }
+    isAdmin(){
+        return this.admin && this.hasCredentials();
+    }
+    renameFn(str){
+        if(str == "username" || str == "password")
+            return str;
+        return false;
     }
 }
 

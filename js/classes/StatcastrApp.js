@@ -18,9 +18,8 @@ class StatcastrApp {
 	 * @param {Element} appRootEl Root element to place app in
 	 * @param {Synchronizr} synchronizr Synchronizr instance
 	 * @param {String} eventId Id of event to listen to. Can be null
-	 * @param {Boolean} isAdmin True for admin mode, false for spectator mode.
 	 */
-	constructor(appRootEl, synchronizr, eventId, isAdmin, wantsAdmin) {
+	constructor(appRootEl, synchronizr, eventId) {
 		var t = this;
 		assert(appRootEl != null, "App Root Element is required")
 		assert(synchronizr != null, "Synchronizr is required")
@@ -31,7 +30,7 @@ class StatcastrApp {
 		t.views = [];
 		t.NULL_VIEW = new NullView();
 		t.eventId = eventId;
-		t.isAdmin = isAdmin;
+		t.isAdmin = Credentials.isAdmin();
 
 		t.viewSelector = t.createViewSelector();
 		t.viewSelector.addSelectionListener(function (sel) { t.onViewSelectedDirect(sel) });
@@ -59,12 +58,11 @@ class StatcastrApp {
 		if (eventId == null) // If no event is selected, ask the user to choose one
 			t.onViewSelected("eventList");
 		else {
-			synchronizr.setEventId(eventId, isAdmin); // Otherwise, begin syncing to the current event
-			if (isAdmin || wantsAdmin) { // Admin must manually pull stats if they want to, otherwise they just push
+			synchronizr.setEventId(eventId, t.isAdmin); // Otherwise, begin syncing to the current event
+			if (t.isAdmin) { // Admin must manually pull stats if they want to, otherwise they just push
 				setTimeout(function () {
 					synchronizr.loadFromStorage(eventId, true, t.model.getTemplate());
-					if (isAdmin)
-						synchronizr.beginHashValidation();
+					synchronizr.beginHashValidation();
 				}, 0);
 			} else // Fans must wait for the feed to load
 				t.showMainDialog("loadingStatsFeed", "Event Id: " + eventId);
@@ -207,7 +205,7 @@ class StatcastrApp {
 			if (arg2) // arg2 = bad credentials
 				d.appendChild(badLbl);
 
-			var form = new PreferencesField(arg2 ? { username: "", password: "" } : Credentials);
+			var form = new PreferencesField(arg2 ? { username: "", password: "" } : Credentials, Credentials.renameFn);
 			d.appendChild(form);
 			var submitBtn = new ButtonField("Submit");
 			submitBtn.addClickListener(function () {
@@ -406,7 +404,8 @@ class StatcastrApp {
 	onAdminLoginDone() {
 		var t = this;
 		t.isAdmin = true;
-		t.modifyURL("admin", true); // Mark the URL as admin
+		Credentials.admin = true;
+		Credentials.save();
 		t.onViewSelected("admin");
 		t.viewSelector.setSelected(t.selectedView); // Select the "Admin" tab
 		t.synchronizr.setEventId(t.eventId, true); // Log in and become the admin

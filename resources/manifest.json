@@ -1,6 +1,6 @@
 {
     "short_name": "Statcastr",
-    "name": "Statcastr live stats",
+    "name": "Statcastr",
     "description": "Statcastr live stats feed viewer and controller",
     "icons": [
         {
