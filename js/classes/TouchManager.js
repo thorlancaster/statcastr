@@ -5,10 +5,10 @@ class TouchManager {
         this.T_TOL = 60; // Theta-tolerance for gesture direction (Up, Down, Left, Right);
         this.MIN_TAP_TIME = 60; // Minimum ms between touches to count taps
         this.MIN_ANG_MOVE = 55; // Minimum dx+dy to count angle movement
+        this.MAX_EDGE_DIST = 9; // If first touch is closer than this to top/bottom, set "fromEnd" flag
     }
     log(m){
-        return false;
-        console.log("TOUCHMANAGER: " + m);
+        // console.log("TOUCHMANAGER: " + m);
     }
     end() {
         console.error("TouchManager.end() is not implemented");
@@ -34,6 +34,9 @@ class TouchManager {
             var cts = e.targetTouches;
             for (var x = 0; x < cts.length; x++) {
                 var ct = cts[x];
+                var distFromEnd = Math.min(ct.screenY, screen.height - ct.screenY);
+                if(t._dist == null)
+                    t._dist = distFromEnd;
                 // console.log("Start " + ct.identifier);
                 ct.tTime = Date.now();
                 t.touches[ct.identifier] = ct;
@@ -101,6 +104,8 @@ class TouchManager {
             // console.log(t.touches);
             // uCanceledBy (UIFramework Canceled By) is set by objects that don't want to count as a touch
             if (touchCount == 0 && t.allTouches.length != 0) {
+                var fromEnd = t._dist < t.MAX_EDGE_DIST;
+                t._dist = null;
                 if(e.uCanceledBy == null){ // Only parse gesture if last TouchEvent wasn't canceled
                     var dx = [], dy = []; // Arrays to keep track of how much each point moved
                     var dxSum = 0, dySum = 0;
@@ -131,6 +136,7 @@ class TouchManager {
                     // Don't support tapping with more than 3 total fingers.
                     // It is ergonomically hard to do right and error-prone.
                     rtn.taps = rtn.touches <= 3 ? (t.numTaps!=0?t.numTaps-1:0) : 0;
+                    rtn.fromEnd = fromEnd;
                     t.log(JSON.stringify(rtn));
                     t.handleGesture(rtn);
                 }

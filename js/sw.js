@@ -1,5 +1,7 @@
 // Use a cacheName for cache versioning
-var cacheName = 'v1:static';
+var cacheHash = "0a8cb48"; // TODO Replaced by the bundler. For now I have to do it manually
+
+var cacheName = "statcastr-" + cacheHash;
 
 // During the installation phase, you'll usually want to cache static assets.
 self.addEventListener('install', function(e) {
@@ -7,7 +9,7 @@ self.addEventListener('install', function(e) {
     e.waitUntil(
         caches.open(cacheName).then(function(cache) {
             return cache.addAll([
-                './',
+                './?standalone=true',
                 './bundle.all.css',
                 './bundle.all.js',
                 './favicon.ico'
@@ -31,4 +33,17 @@ self.addEventListener('fetch', function(event) {
             return fetch(event.request);
         })
     );
+});
+
+// On version update, remove old cached files
+self.addEventListener('activate', function (event) {
+	event.waitUntil(caches.keys().then(function (keys) {
+		return Promise.all(keys.filter(function (key) {
+			return key.startsWith("statcastr-") && !key.endsWith(cacheHash);
+		}).map(function (key) {
+			return caches.delete(key);
+		}));
+	}).then(function () {
+		// return self.clients.claim();
+	}));
 });

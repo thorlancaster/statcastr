@@ -63,6 +63,7 @@ class Dialog{
     remove(){
         var t = this;
         t.panel.removeClass("showing");
+        t.box.setStyle("pointerEvents", "none");
         setTimeout(function(){
             var e = t.panel.element;
             if(e.parentElement)

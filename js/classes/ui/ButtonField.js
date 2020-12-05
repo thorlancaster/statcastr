@@ -1,14 +1,17 @@
-class ButtonField extends UIPanel {
+class ButtonField extends UIPanel { // TODO all the extra functionality should go into ButtonField++ or something
 	constructor(btnText, fullSize, useHtml) {
 		super();
 		var t = this;
 		t.LONG_PRESS_TIME = 500;
 		t.clickListeners = [];
 		t.longClickListeners = [];
+		t.adjustListeners = [];
 		t.setFullSize(fullSize);
 		t.btn = DCE("button");
 		t.mouseTmr = 0; // Timer for long press - mouse
 		t.touchTmr = 0; // Timer for long press - touch
+		t._origY = null; // Original y-coordinate for button drag
+		t.adjustDivider = 1;
 		t.addClass("buttonField");
 		t.appendChild(t.btn);
 		if (useHtml)
@@ -34,12 +37,27 @@ class ButtonField extends UIPanel {
 			else {
 				var touch = e.targetTouches[0];
 				var el = document.elementFromPoint(touch.clientX, touch.clientY);
-				if(touch.target != el)
+				if(touch.target != el){
 					t.LCTCancel();
+					if(t._origY == null)
+						t._origY = touch.screenY;
+				}
+				if(t._origY != null){
+					var diff = touch.screenY - t._origY;
+					var diffDiv = Math.round(diff / t.adjustDivider);
+					if(diffDiv != t._adivX){
+						t._adivX = diffDiv;
+						t.adjust(diffDiv, false);
+					}
+				}
 			}
 		});
 		t.btn.addEventListener("touchend", function (e) {
-			// console.log("TouchEnd");
+			if(t._origY != null){
+				t.adjust(t._adivX, true);
+			}
+			t._origY = null;
+			t._adivX = null;
 			t.LCTCancel();
 			if (!t.enabled) return;
 			e.uCanceledBy = t;
@@ -70,6 +88,14 @@ class ButtonField extends UIPanel {
 	longClick(){
 		for (var x = 0; x < this.longClickListeners.length; x++)
 		this.longClickListeners[x](this);
+	}
+
+	adjust(amt, done){
+		for (var x = 0; x < this.adjustListeners.length; x++)
+		this.adjustListeners[x](this, amt, done);
+	}
+	setAdjustDivider(a){
+		this.adjustDivider = a;
 	}
 
 	click(e) {
@@ -149,6 +175,11 @@ class ButtonField extends UIPanel {
 	addLongClickListener(f) {
 		if (!this.longClickListeners.includes(f))
 			this.longClickListeners.push(f);
+		return this;
+	}
+	addAdjustListener(f) {
+		if (!this.adjustListeners.includes(f))
+			this.adjustListeners.push(f);
 		return this;
 	}
 }

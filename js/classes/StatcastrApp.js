@@ -99,6 +99,19 @@ class StatcastrApp {
 		}
 	}
 
+	logout(){
+		var t = this;
+		this.isAdmin = false;
+		Credentials.admin = false;
+		Credentials.password = "";
+		Credentials.save();
+		t.synchronizr.setEventId(t.eventId, t.isAdmin);
+		if(t.selectedView == "admin"){
+			t.onViewSelected("scoreboard");
+			t.viewSelector.setSelected(t.selectedView);
+		}
+	}
+
 	setSynchronizr(s) {
 		this.synchronizr = s;
 		this.synchronizrPtr[0] = s;
@@ -262,24 +275,23 @@ class StatcastrApp {
 		else if (dlg == "createNewEvent") {
 			var exList = EventListPrefs.events;
 			var exStr = exList ? ("" + exList).replace(',', ", ") : "None";
-			var d = new Dialog("Create new event");
+			var d = new Dialog("Create / Goto Event");
 			var form = new PreferencesField({ eventId: "" }).setStyle("marginBottom", "0.5em");
 			var label = new TextField("Existing events: <br/>" + exStr, true).setStyle("marginBottom", "0.5em");
 			var submit = new ButtonField("Submit");
 			submit.addClickListener(function () {
 				var res = form.getState().eventId;
-				if (exList.includes(res)) {
-					new Toast("Event already exists");
-					return;
-				}
 				d.close();
-				t.eventId = res;
-				t.eventTeam = "Unknown";
-				t.eventOpp = "Unknown";
-				t.synchronizr.setEventId(t.eventId, t.isAdmin);
-				t.synchronizr.loadFromStorage(t.eventId, true, t.model.getTemplate());
 				t.evtSelDlg.remove();
+				t.eventId = res;
 				t.modifyURL("event", t.eventId);
+				if (!exList.includes(res)) {
+					t.eventTeam = "Unknown";
+					t.eventOpp = "Unknown";
+				} else {
+					t.synchronizr.loadFromStorage(t.eventId, true, t.model.getTemplate());
+				}
+				t.synchronizr.setEventId(t.eventId, t.isAdmin);
 			});
 			d.appendChild(form);
 			d.appendChild(label);

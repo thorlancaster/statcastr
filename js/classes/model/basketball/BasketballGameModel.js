@@ -211,13 +211,14 @@ class BasketballGameModel extends GameModel {
 	}
 }
 
-// Rename to CountdownGameClock for sport-agnostic edition
+// TODO Rename to CountdownGameClock for sport-agnostic edition
 class BasketballGameClock extends GameClock {
 	constructor() {
 		super();
 		var t = this;
 		t.period = 0;
 		t.millisLeft = 0;
+		t.nudge = 0;
 		t._timer = null;
 		t._lastMs = null;
 	}
@@ -248,7 +249,7 @@ class BasketballGameClock extends GameClock {
 	}
 
 	getTime() {
-		var ml = this.millisLeft;
+		var ml = Math.max(0, this.millisLeft + this.nudge);
 		return {
 			minutes: Math.floor(ml / 60000),
 			seconds: Math.floor(ml / 1000) % 60,

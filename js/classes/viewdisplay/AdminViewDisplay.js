@@ -109,9 +109,8 @@ class AdminWidget extends UIPanel {
 		t.p2Btn = t.createBtn(2); t.playSel.appendChild(t.p2Btn);
 		t.p3Btn = t.createBtn(3); t.playSel.appendChild(t.p3Btn);
 		t.pfBtn = t.createBtn('F'); t.playSel.appendChild(t.pfBtn);
-		t.ckBtn = t.createBtn('CLOCK').setFontSize("0.8em");
-		ab.push(t.p1Btn, t.p2Btn, t.p3Btn, t.pfBtn);
-		t.playSel.appendChild(t.ckBtn);
+		t.subBtn = t.createBtn('SU<u>B</u>', true);
+		t.playSel.appendChild(t.subBtn);
 		t.appendChild(t.playSel);
 		// Action Selection Panel - Select Other action
 		t.actSel = new UIPanel();
@@ -120,8 +119,8 @@ class AdminWidget extends UIPanel {
 		t.toBtn = t.createBtn('TO<u>V</u>', true); t.actSel.appendChild(t.toBtn);
 		t.chBtn = t.createBtn('C<u>H</u>ARGE', true).setFontSize("0.8em");
 		t.actSel.appendChild(t.chBtn);
-		t.subBtn = t.createBtn('SU<u>B</u>', true); t.actSel.appendChild(t.subBtn);
-		ab.push(t.rbBtn, t.stlBtn, t.toBtn, t.chBtn, t.subBtn);
+		t.ckBtn = t.createBtn('CLOCK').setFontSize("0.8em");
+		t.actSel.appendChild(t.ckBtn);
 		t.appendChild(t.actSel);
 		// Action Selection panel 2 - Select other action or game management
 		t.actSel2 = new UIPanel();
@@ -129,8 +128,16 @@ class AdminWidget extends UIPanel {
 		t.repBtn = t.createBtn("REP"); t.actSel2.appendChild(t.repBtn);
 		t.xxBtn2 = t.createBtn("--"); t.actSel2.appendChild(t.xxBtn2);
 		t.xxBtn3 = t.createBtn("--"); t.actSel2.appendChild(t.xxBtn3);
-		t.xxBtn4 = t.createBtn("--"); t.actSel2.appendChild(t.xxBtn4);
+		t.xxBtn4 = t.createBtn("LOG OUT").setFontSize("0.8em"); t.actSel2.appendChild(t.xxBtn4);
+		t.xxBtn4.addClickListener(function () { new Toast("Hold to log out"); });
+		t.xxBtn4.addLongClickListener(function () {
+			t.vibrate(t.VIBE_BTN_HOLD);
+			t.logout();
+		});
+		ab.push(t.p1Btn, t.p2Btn, t.p3Btn, t.pfBtn, t.subBtn);
+		ab.push(t.rbBtn, t.stlBtn, t.toBtn, t.chBtn, t.ckBtn);
 		ab.push(t.delBtn, t.repBtn, t.xxBtn2, t.xxBtn3, t.xxBtn4);
+
 		t.appendChild(t.actSel2);
 
 		t.p1Btn.addClickListener(function () { t.onPlayX(1); });
@@ -142,7 +149,8 @@ class AdminWidget extends UIPanel {
 			t.onClockXLong();
 			t.vibrate(t.VIBE_BTN_HOLD);
 		});
-		// TODO long press to set clock, drag to change clock
+		t.ckBtn.setAdjustDivider(3);
+		t.ckBtn.addAdjustListener(t.onClockNudgeX.bind(t));
 
 		t.rbBtn.addClickListener(function () { t.onPlayX('rebound'); });
 		t.stlBtn.addClickListener(function () { t.onPlayX('steal'); });
@@ -154,6 +162,16 @@ class AdminWidget extends UIPanel {
 		t.repBtn.addClickListener(t.onReplaceX.bind(t));
 
 		t.setEntryBusy(false);
+	}
+
+	logout() {
+		var sc = SC; // TODO better way to get StatCastrApp instance
+		var d = new ConfirmationDialog("Log Out", function () {
+			sc.logout();
+			d.remove();
+		});
+		d.prependChild(new TextField("Are you sure?"))
+		d.show();
 	}
 
 	getSynchronizr() { return this.synchronizrPtr[0] }
@@ -218,6 +236,8 @@ class AdminWidget extends UIPanel {
 
 	onGesture(obj) {
 		var t = this;
+		if(obj.fromEnd) // Swiping from top/bottom is for system UI, not this app
+			return;
 		if (obj.direction == "") {
 			if (t.entryBusy) {
 				if ((obj.touches == 1 && obj.taps == 0) || (obj.touches == 2 && obj.taps != 0)) {
@@ -427,7 +447,7 @@ class AdminWidget extends UIPanel {
 			var sub = false;
 			var plyr = t.selPlayers[0];
 			var team = t.selTeam ? t.model.team : t.model.opp;
-			if(!team.onCourtIds().includes(plyr)){
+			if (!team.onCourtIds().includes(plyr)) {
 				sub = true;
 				var numOut = team.getLeastActive(t.model.pbp.plays, t.selTeam).id;
 				var subPlay = new BasketballPBPItem(t.entryPd, t.entryMs, plyr, t.selTeam, bpt.SUB, numOut);
@@ -435,7 +455,7 @@ class AdminWidget extends UIPanel {
 				t.model.updateFromPBP();
 			}
 			var play = new BasketballPBPItem(t.entryPd, t.entryMs, plyr, t.selTeam, playType);
-			if(sub)
+			if (sub)
 				play.setLinked(true);
 			t.model.pbp.addPlay(play);
 			new Toast("Submitted: " + BasketballPlayType.toLongStr(playType) + " " + plyr + (sub ? " [SUB REQUIRED]" : ""));
@@ -595,6 +615,18 @@ class AdminWidget extends UIPanel {
 		else
 			t.vibrate(t.VIBE_CLOCK_STOP);
 		t.updateAll(4);
+	}
+	onClockNudgeX(x, amt, done) { // Called when the clock toggle button is nudged
+		var t = this, c = t.model.clock;
+		if (done){
+			c.millisLeft = Math.max(0, c.millisLeft + c.nudge);
+			c.nudge = 0;
+			t.updateAll(4);
+		}
+		else{
+			c.nudge = -1000 * amt * Math.abs(Math.tanh(amt / 20));
+			t.scoreboardUpdateCb();
+		}
 	}
 	onClockXLong() {
 		// Called when the clock toggle button is held
@@ -833,7 +865,7 @@ class AdminWidget extends UIPanel {
 			sts.length = 0;
 			for (var x = 0; x < arr.length; x++) {
 				pls[arr[x].nbr] = new team.PLAYER_CLASS(arr[x].nbr, arr[x].nam);
-				if(arr[x].sta)
+				if (arr[x].sta)
 					sts.push(arr[x].nbr);
 			}
 		}
