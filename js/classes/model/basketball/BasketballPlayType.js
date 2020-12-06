@@ -2,6 +2,10 @@
  * Encodes the numeric types of plays that can be sent over the wire
  * and stored in BasketballPBPItem objects
  */
+/**
+ * WARNING: Make sure to add all these in BasketballTeam.js as well or 
+ * THINGS WILL BREAK as a GAME-ENDING BUG
+ */
 const BasketballPlayType = {
     FOUL_P: 1,
     FOUL_T: 2,

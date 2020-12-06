@@ -27,6 +27,7 @@ class BasketballPlayer extends Player{
       t.blocks = 0;
       t.steals = 0;
       t.turnovers = 0;
+      t.charges = 0;
     }
     get p2Made(){return this.p2NormMade + this.dunkMade}
     get p2Miss(){return this.p2NormMiss + this.dunkMiss}

@@ -134,18 +134,18 @@ class GameModel {
 	putEditData(obj) {
 		var t = this;
 		if (!obj) return;
-		if (obj.hTown) t.team.town = obj.hTown;
-		if (obj.hName) t.team.name = obj.hName;
-		if (obj.hAbbr) t.team.abbr = obj.hAbbr;
-		if (obj.hImg) t.team.image = obj.hImg;
-		if (obj.gTown) t.opp.town = obj.gTown;
-		if (obj.gName) t.opp.name = obj.gName;
-		if (obj.gAbbr) t.opp.abbr = obj.gAbbr;
-		if (obj.gImg) t.opp.image = obj.gImg;
-		if (obj.gender) t.gender = obj.gender;
-		if (obj.location) t.location = obj.location;
-		if (obj.startTime) t.startTime = obj.startTime;
-		if (obj.desc) t.desc = obj.desc;
+		if (obj.hTown != undefined) t.team.town = obj.hTown;
+		if (obj.hName != undefined) t.team.name = obj.hName;
+		if (obj.hAbbr != undefined) t.team.abbr = obj.hAbbr;
+		if (obj.hImg != undefined) t.team.image = obj.hImg;
+		if (obj.gTown != undefined) t.opp.town = obj.gTown;
+		if (obj.gName != undefined) t.opp.name = obj.gName;
+		if (obj.gAbbr != undefined) t.opp.abbr = obj.gAbbr;
+		if (obj.gImg != undefined) t.opp.image = obj.gImg;
+		if (obj.gender != undefined) t.gender = obj.gender;
+		if (obj.location != undefined) t.location = obj.location;
+		if (obj.startTime != undefined) t.startTime = obj.startTime;
+		if (obj.desc != undefined) t.desc = obj.desc;
 	}
 
 	editDataRenameFunction(name) {

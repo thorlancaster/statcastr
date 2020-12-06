@@ -15,12 +15,8 @@ class Main {
         // ToastSetRoot(APP_ROOT);
         var params = new URL(location.href).searchParams;
         var eventId = params.get("event");
-        var isAdmin = params.get("admin") == "true";
-        var wantsAdmin = isAdmin;
-        if (!Credentials.hasCredentials())
-            isAdmin = false;
         var s = new Synchronizr();
-        t.sc = new StatcastrApp(DGE(APP_ROOT), s, eventId, isAdmin, wantsAdmin);
+        t.sc = new StatcastrApp(DGE(APP_ROOT), s, eventId);
         // s.setLocalData(t.sc.getStaticData(), t.sc.getDynamicData(), t.sc.getEventData());
         // s.setLocalDataClasses(t.sc.getStaticDataClass(), t.sc.getDynamicDataClass(), t.sc.getEventDataClass());
         s.setUpdateCallback(t.sc.onSynchronizrUpdate.bind(t.sc));
@@ -31,7 +27,7 @@ class Main {
         s.setHashValidationDoneCallback(t.sc.onSynchronizrHvDone.bind(t.sc));
 
         t.channel = new WebsocketReliableChannel();
-        t.channel.setTarget("wss://redhawksports.net", 1234);
+        t.channel.setTarget("wss://" + window.location.hostname, 1234);
         // t.channel.setTarget("ws://localhost", 1234);
         s.setChannel(t.channel);
         t.channel.connect();

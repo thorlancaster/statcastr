@@ -236,7 +236,7 @@ class AdminWidget extends UIPanel {
 
 	onGesture(obj) {
 		var t = this;
-		if(obj.fromEnd) // Swiping from top/bottom is for system UI, not this app
+		if (obj.fromEnd) // Swiping from top/bottom is for system UI, not this app
 			return;
 		if (obj.direction == "") {
 			if (t.entryBusy) {
@@ -618,12 +618,12 @@ class AdminWidget extends UIPanel {
 	}
 	onClockNudgeX(x, amt, done) { // Called when the clock toggle button is nudged
 		var t = this, c = t.model.clock;
-		if (done){
+		if (done) {
 			c.millisLeft = Math.max(0, c.millisLeft + c.nudge);
 			c.nudge = 0;
 			t.updateAll(4);
 		}
-		else{
+		else {
 			c.nudge = -1000 * amt * Math.abs(Math.tanh(amt / 20));
 			t.scoreboardUpdateCb();
 		}
@@ -664,8 +664,10 @@ class AdminWidget extends UIPanel {
 		var ms = m.clock.millisLeft, pd = m.clock.period;
 		switch (type) {
 			case 1:
-				m.reloadRosters(); // Reload everything
-				m.reloadFromPBP();
+				try {
+					m.reloadRosters(); // Reload everything
+					m.reloadFromPBP();
+				} catch (e) { console.error("Error while admin updating", e); }
 				m.clock.millisLeft = ms; m.clock.period = pd;
 				t.scoreboardUpdateCb(); // Update the scoreboard
 				m.invalidateStatic();
@@ -675,7 +677,9 @@ class AdminWidget extends UIPanel {
 				s.pushToTarget(); // Send it down the wire
 				break;
 			case 2:
-				m.reloadFromPBP(); // Update all plays in PBP to model
+				try {
+					m.reloadFromPBP(); // Update all plays in PBP to model
+				} catch (e) { console.error("Error while admin updating", e); }
 				m.clock.millisLeft = ms; m.clock.period = pd; // Save clock so it doesn't change
 				t.scoreboardUpdateCb(); // Update the scoreboard
 				m.invalidateDynamic(); // Never hurts to update the clock too
@@ -684,7 +688,9 @@ class AdminWidget extends UIPanel {
 				s.pushToTarget(); // Send it down the wire
 				break;
 			case 3:
-				m.updateFromPBP(); // Update last play in PBP to model
+				try {
+					m.updateFromPBP(); // Update last play in PBP to model
+				} catch (e) { console.error("Error while admin updating", e); }
 				m.clock.millisLeft = ms; m.clock.period = pd; // Save clock so it doesn't change
 				t.scoreboardUpdateCb(); // Update the scoreboard
 				m.invalidateDynamic(); // Never hurts to update the clock too

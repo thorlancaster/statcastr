@@ -285,13 +285,15 @@ class StatcastrApp {
 				t.evtSelDlg.remove();
 				t.eventId = res;
 				t.modifyURL("event", t.eventId);
-				if (!exList.includes(res)) {
+				if (!exList.includes(res) && !t.synchronizr.canLoadFromStorage(t.eventId)) {
 					t.eventTeam = "Unknown";
 					t.eventOpp = "Unknown";
 				} else {
 					t.synchronizr.loadFromStorage(t.eventId, true, t.model.getTemplate());
 				}
 				t.synchronizr.setEventId(t.eventId, t.isAdmin);
+				t.synchronizr.updateFromModel(t.model);
+				t.synchronizr.pushToTarget();
 			});
 			d.appendChild(form);
 			d.appendChild(label);

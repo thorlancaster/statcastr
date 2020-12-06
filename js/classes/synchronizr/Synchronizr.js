@@ -383,6 +383,12 @@ class Synchronizr {
 		if (updateLocal != false)
 			t.updateLocal(true, true, true);
 	}
+	canLoadFromStorage(eventId){
+		var t = this;
+		return t.loadFromStorage0(eventId + "-s",  true)
+		|| t.loadFromStorage0(eventId + "-d",  true)
+		|| t.loadFromStorage0(eventId + "-e",  true);
+	}
     /**
      * Save an array to local storage.
      * Array will be sharded into a series of chunks named {key}-0, {key}-1, etc.
@@ -423,13 +429,15 @@ class Synchronizr {
     /**
      * Load and return an array from local storage
      * @param {String} key
+	 * @param {Boolean} test True to test if loading is possible, but not load
      */
-	loadFromStorage0(key) {
+	loadFromStorage0(key, test) {
 		var shardNum = 0;
 		var rtn = [];
 		while (1) {
 			var shard = localStorage.getItem(key + shardNum++);
 			if (!shard) break;
+			else if(test) return true;
 			var shardPtr = 0;
 			while (shardPtr < shard.length) {
 				var len = shard.charCodeAt(shardPtr++) + shard.charCodeAt(shardPtr++);

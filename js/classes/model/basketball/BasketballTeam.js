@@ -35,6 +35,7 @@ class BasketballTeam extends Team{
       if(!otherFilter){
         t.doPlayForTime(p);
       }
+
       if(!otherTeam){
         var pl = t.players[p.pid];
         var pl2 = t.players[p.pid2];
@@ -60,7 +61,9 @@ class BasketballTeam extends Team{
             case T.STEAL: pl.steals++; break;
             case T.TURNOVER: pl.turnovers++; break;
             case T.SUB: pl.onCourt = true; pl2.onCourt = false; break;
-            default: assert(false, "Unrecognized play type");
+            // case T.CHARGE_TAKEN: pl.charges++; break;
+            default: assert(false, "Unrecognized play type"); // TODO support all play types
+
           }
         } else {
           switch(p.type){
