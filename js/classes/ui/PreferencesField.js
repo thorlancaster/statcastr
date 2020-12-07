@@ -21,7 +21,9 @@ class PreferencesField extends UIPanel {
 			if (renameFn){
 				var ren = renameFn(k);
 				if(ren){
-					t.ctrls.push(t.addRow(ren, obj[k]));
+					var val = obj[k];
+					if(val == undefined) val == "";
+					t.ctrls.push(t.addRow(ren, val));
 					t.keys.push(k);
 				}
 			}

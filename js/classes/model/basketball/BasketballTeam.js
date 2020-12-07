@@ -61,7 +61,7 @@ class BasketballTeam extends Team{
             case T.STEAL: pl.steals++; break;
             case T.TURNOVER: pl.turnovers++; break;
             case T.SUB: pl.onCourt = true; pl2.onCourt = false; break;
-            // case T.CHARGE_TAKEN: pl.charges++; break;
+            case T.CHARGE_TAKEN: pl.charges++; break;
             default: assert(false, "Unrecognized play type"); // TODO support all play types
 
           }

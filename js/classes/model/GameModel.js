@@ -494,7 +494,6 @@ class Team {
 	 * @returns The player on the court who has least recently played. A usefull heuristic for emergency substitutions.
 	 */
 	getLeastActive(pbp, whichTeam) {
-		debugger;
 		var pls = [...this.onCourtIds()];
 		for(var x = pbp.length - 1; x >= 0; x--){
 			var play = pbp[x];

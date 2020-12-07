@@ -149,7 +149,7 @@ class AdminWidget extends UIPanel {
 			t.onClockXLong();
 			t.vibrate(t.VIBE_BTN_HOLD);
 		});
-		t.ckBtn.setAdjustDivider(3);
+		t.ckBtn.setAdjustDivider(2);
 		t.ckBtn.addAdjustListener(t.onClockNudgeX.bind(t));
 
 		t.rbBtn.addClickListener(function () { t.onPlayX('rebound'); });
@@ -235,12 +235,16 @@ class AdminWidget extends UIPanel {
 	}
 
 	onGesture(obj) {
+		console.log(obj);
+		var d = obj.direction;
 		var t = this;
 		if (obj.fromEnd) // Swiping from top/bottom is for system UI, not this app
 			return;
-		if (obj.direction == "") {
+		if(t.entryBusy && obj.touches == 4 &&  (d.includes("up") || d.includes("down"))) t.onNumberX(5); // 4 dragged = 5
+		else if(t.entryBusy && obj.touches == 1 && d.includes("wiggle")) t.onNumberX(0); // 1 wiggled = 0
+		else if (d == "") {
 			if (t.entryBusy) {
-				if ((obj.touches == 1 && obj.taps == 0) || (obj.touches == 2 && obj.taps != 0)) {
+				if ((obj.touches == 2 && obj.taps != 0)) {
 					// Tap number entry
 					if (obj.taps <= 5) {
 						// console.log("NBR " + obj.taps);
@@ -259,7 +263,7 @@ class AdminWidget extends UIPanel {
 			}
 		} else {
 			if (!t.entryBusy) { // Not busy entering, swipes act as taps on buttons
-				if (obj.direction.includes("up")) { // 1, 2, 3, F
+				if (d.includes("up")) { // 1, 2, 3, F
 					switch (obj.touches) {
 						case 1: t.p1Btn.click(); break;
 						case 2: t.p2Btn.click(); break;
@@ -267,30 +271,30 @@ class AdminWidget extends UIPanel {
 						case 4: t.pfBtn.click(); break;
 					}
 				}
-				else if (obj.direction.includes("down")) { // RB, ST, TO, CHARGE
+				else if (d.includes("down")) { // RB, ST, TO, CHARGE
 					switch (obj.touches) {
 						case 1: t.rbBtn.click(); break;
 						case 2: t.stlBtn.click(); break;
 						case 3: t.toBtn.click(); break;
 						case 4: t.chBtn.click(); break;
 					}
-				} else if (obj.direction.includes("left")) {
+				} else if (d.includes("left")) {
 					t.onSelTeam(false);
 				}
-				else if (obj.direction.includes("right")) {
+				else if (d.includes("right")) {
 					t.onSelTeam(true);
 				}
 			} else { // If busy entering, swipes act as cancel/commit
 				if (obj.touches == 1) { // Messy multi-finger taps can be mistakenly counted as swipes
-					if (obj.direction.includes("down")) {
+					if (d.includes("down")) {
 						t.onExpandAction();
 					}
-					else if (obj.direction.includes("up")) {
+					else if (d.includes("up")) {
 						t.onToggleMade();
 					}
-					else if (obj.direction.includes("left")) {// Cancel action
+					else if (d.includes("left")) {// Cancel action
 						t.onBackAction();
-					} else if (obj.direction.includes("right")) { // Commit action
+					} else if (d.includes("right")) { // Commit action
 						t.onCommitNewPlay();
 					}
 				}
@@ -616,7 +620,7 @@ class AdminWidget extends UIPanel {
 			t.vibrate(t.VIBE_CLOCK_STOP);
 		t.updateAll(4);
 	}
-	onClockNudgeX(x, amt, done) { // Called when the clock toggle button is nudged
+	onClockNudgeX(x, amt, done, diff, dTime) { // Called when the clock toggle button is nudged
 		var t = this, c = t.model.clock;
 		if (done) {
 			c.millisLeft = Math.max(0, c.millisLeft + c.nudge);
@@ -624,7 +628,8 @@ class AdminWidget extends UIPanel {
 			t.updateAll(4);
 		}
 		else {
-			c.nudge = -1000 * amt * Math.abs(Math.tanh(amt / 20));
+			var scale = -0.5 * (Math.tanh((dTime-150)/100)) + 0.7;
+			c.nudge += -1000 * diff * scale;
 			t.scoreboardUpdateCb();
 		}
 	}

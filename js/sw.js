@@ -1,5 +1,5 @@
 // Use a cacheName for cache versioning
-var cacheHash = "0a8cb54"; // TODO Replaced by the bundler. For now I have to do it manually
+var cacheHash = "0a8cb55"; // TODO Replaced by the bundler. For now I have to do it manually
 
 var cacheName = "statcastr-" + cacheHash;
 

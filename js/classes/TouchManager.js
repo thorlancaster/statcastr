@@ -6,6 +6,7 @@ class TouchManager {
         this.MIN_TAP_TIME = 60; // Minimum ms between touches to count taps
         this.MIN_ANG_MOVE = 55; // Minimum dx+dy to count angle movement
         this.MAX_EDGE_DIST = 9; // If first touch is closer than this to top/bottom, set "fromEnd" flag
+        this.WIGGLE_RATIO = 2.2; // How much longer actual finger path has to be than straight finger path to count as wiggle
     }
     log(m){
         // console.log("TOUCHMANAGER: " + m);
@@ -29,9 +30,14 @@ class TouchManager {
         t.allTouches = []; // All points the user has touched since taking fingers off screen
         t.startTouches = []; // All points the user has started a touch on initially "" ""
         t.numTaps = 0;
+        t._distLx = 0;
+        t._distLy = 0;
+        t.totalDist = 0;
         t.appRoot.addEventListener("touchstart", function (e) {
             // Add changed touches to touch list
             var cts = e.targetTouches;
+            t._distLx = cts[0].pageX;
+            t._distLy = cts[0].pageY;
             for (var x = 0; x < cts.length; x++) {
                 var ct = cts[x];
                 var distFromEnd = Math.min(ct.screenY, screen.height - ct.screenY);
@@ -60,6 +66,13 @@ class TouchManager {
                 var tc = t.allTouches[ct.identifier];
                 ct.tTime = tc?tc.tTime:Date.now();
                 t.allTouches[ct.identifier] = ct;
+            }
+            if(t.allTouches.length == 1){
+                var x = cts[0].screenX;
+                var y = cts[0].screenY;
+                t.totalDist += Math.sqrt((x-t._distLx) * (x-t._distLx) + (y-t._distLy) * (y-t._distLy));
+                t._distLx = x;
+                t._distLy = y;
             }
             if (e.cancelable)
                 e.preventDefault();
@@ -124,15 +137,17 @@ class TouchManager {
                         // console.log(dx[x], dy[x]);
                     }
                     var rtn = {};
+                    rtn.touches = t.allTouches.length;
                     rtn.dx = dxSum / t.allTouches.length;
                     rtn.dy = dySum / t.allTouches.length;
                     rtn.ang = Math.atan2(rtn.dy, rtn.dx) * (180/Math.PI);
+                    rtn.direction = "";
+                    var wiggle = t.totalDist / (1 + Math.sqrt(rtn.dx * rtn.dx + rtn.dy * rtn.dy));
+                    if(rtn.touches == 1 && wiggle > t.WIGGLE_RATIO)
+                        rtn.direction += "wiggle";
                     if(Math.abs(rtn.dy) + Math.abs(rtn.dx) > t.MIN_ANG_MOVE)
-                        rtn.direction = t.getDirection(rtn.ang);
-                    else
-                        rtn.direction = "";
+                        rtn.direction += t.getDirection(rtn.ang);
 
-                    rtn.touches = t.allTouches.length;
                     // Don't support tapping with more than 3 total fingers.
                     // It is ergonomically hard to do right and error-prone.
                     rtn.taps = rtn.touches <= 3 ? (t.numTaps!=0?t.numTaps-1:0) : 0;
@@ -144,6 +159,9 @@ class TouchManager {
                 t.startTouches.length = 0;
                 t.numTaps = 0;
                 t.firstTouchTime = 0;
+                t.totalDist = 0;
+                t._distLx = 0;
+                t._distLy = 0;
             }
             return false;
         });

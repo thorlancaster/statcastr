@@ -39,22 +39,28 @@ class ButtonField extends UIPanel { // TODO all the extra functionality should g
 				var el = document.elementFromPoint(touch.clientX, touch.clientY);
 				if(touch.target != el){
 					t.LCTCancel();
-					if(t._origY == null)
+					if(t._origY == null){
 						t._origY = touch.screenY;
+						t._adivDx = 0;
+						t._adjMs = Date.now();
+					}
 				}
 				if(t._origY != null){
 					var diff = touch.screenY - t._origY;
 					var diffDiv = Math.round(diff / t.adjustDivider);
 					if(diffDiv != t._adivX){
+						var o = t._adivX | 0;
+						var tm = Date.now();
 						t._adivX = diffDiv;
-						t.adjust(diffDiv, false);
+						t.adjust(diffDiv, false, t._adivX - o, tm - t._adjMs);
+						t._adjMs = tm;
 					}
 				}
 			}
 		});
 		t.btn.addEventListener("touchend", function (e) {
 			if(t._origY != null){
-				t.adjust(t._adivX, true);
+				t.adjust(t._adivX, true, 0, Date.now() - t._adjMs);
 			}
 			t._origY = null;
 			t._adivX = null;
@@ -90,9 +96,9 @@ class ButtonField extends UIPanel { // TODO all the extra functionality should g
 		this.longClickListeners[x](this);
 	}
 
-	adjust(amt, done){
+	adjust(amt, done, diff, dTime){
 		for (var x = 0; x < this.adjustListeners.length; x++)
-		this.adjustListeners[x](this, amt, done);
+		this.adjustListeners[x](this, amt, done, diff, dTime);
 	}
 	setAdjustDivider(a){
 		this.adjustDivider = a;
