@@ -74,6 +74,7 @@ class AdminWidget extends UIPanel {
 		t.topPanel.appendChild(new UIPanel().setStyle("width", t.SPACER_SZ)
 			.setStyle("background", "var(--main-bg2").setElasticity(0));
 		t.connStatus = new ProgressBarField("Conn Status");
+		t.connStatus.addClickListener(t.onConnClick.bind(t));
 		t.connStatus.setColors("#555", "var(--main-bg2)");
 		t.connStatus.setProgress(75);
 		t.connStatus.setStyle("width", "30%");
@@ -191,12 +192,12 @@ class AdminWidget extends UIPanel {
 		if (sta.readyState == 0) {
 			el.setColors("#932", "var(--main-bg2)");
 			el.setProgress(100);
-			el.setText("Connecting");
+			el.setText(sta.status);
 		}
-		else if (sta.readyState == 2) {
+		else if (sta.readyState != 1) {
 			el.setColors("#932", "var(--main-bg2)");
 			el.setProgress(100);
-			el.setText("Disconnected");
+			el.setText(sta.status);
 		}
 		else {
 			el.setColors("#293", "var(--main-bg2)");
@@ -206,6 +207,10 @@ class AdminWidget extends UIPanel {
 				el.setText("Connected");
 			el.setProgress((500 - sta.buffered) / 5);
 		}
+	}
+
+	onConnClick(){
+		this.getSynchronizr().onConnClick();
 	}
 
 	vibrate(pattern) {
@@ -235,7 +240,7 @@ class AdminWidget extends UIPanel {
 	}
 
 	onGesture(obj) {
-		console.log(obj);
+		// console.log(obj);
 		var d = obj.direction;
 		var t = this;
 		if (obj.fromEnd) // Swiping from top/bottom is for system UI, not this app

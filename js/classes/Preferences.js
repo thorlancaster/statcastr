@@ -60,10 +60,12 @@ class MainPreferencesClass extends PreferencesClass{
         t.playersAreColored = true;
         t.useAbbrsOnMobile = true;
         t.enlargeFonts = true;
+        t.useLofi = false;
         t.defaultView = "scoreboard";
     }
     renameFn(str){
         switch(str){
+            case "useLofi": return "Use LoFi radio when admin";
             case "playersAreColored": return "Highlight player names";
             case "useAbbrsOnMobile": return "Abbreviate entries on small screens";
             case "enlargeFonts": return "Larger font";

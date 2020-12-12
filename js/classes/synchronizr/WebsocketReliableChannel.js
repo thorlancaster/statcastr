@@ -1,75 +1,3 @@
-class ReliableChannel {
-    constructor() {
-        this.connTarget = null; // Who we're connecting to
-        this.connPort = null;
-        this.rxCallback = null; // Function to call on rx
-        this.dcCallback = null; // Function to call on conn lost
-        this.opCallback = null; // Function to call on conn established
-        this.inCallback = null; // Function to call on conn initialized
-        this.staChgCallback = null; // Function to call on conn status change
-        this.autoReconnect = true;
-        this.dbgTryPorts = 0; // How many ports up to try on failure
-    }
-    setReceiveCallback(cb) {
-        this.rxCallback = cb;
-    }
-    setCloseCallback(cb) {
-        this.dcCallback = cb;
-    }
-    setOpenCallback(cb) {
-        this.opCallback = cb;
-    }
-    setInitCallback(cb) {
-        this.inCallback = cb;
-    }
-
-    /**
-     * Whenever readyState or bufferedAmount changes, the implementation shall call
-     * the provided function with the following parameters:
-     * readyState: 0 for connecting, 1 for open, 2 for closing or closed
-     * buffered: Number of bytes in buffer not yet sent over network
-     * status: One of "Connecting", "Disconnected", or (int) buffered
-     * 
-     * @param cb Callbback function
-     */
-    setStatusChangeCallback(cb){
-        this.staChgCallback = cb;
-    }
-
-    setTarget(targ, port) {
-        this.connTarget = targ;
-        this.connPort = port;
-        this.origConnPort = port;
-        this.disconnect();
-    }
-    setAutoReconnect(x){
-        this.autoReconnect = x;
-    }
-    /**
-     * @returns length of read queue
-     */
-    available() { throw "Abstract Method" }
-
-    /**
-     * @returns next message in the read queue, or null if queue empty
-     */
-    read() { throw "Abstract Method" }
-
-    /**
-     * @returns number of bytes soft-allowed to write
-     */
-    canWrite() { throw "Abstract Method" }
-
-    // The following are self-explanatory
-    write() { throw "Abstract Method" }
-    isConnected() { throw "Abstract Method" }
-    isClosed() { throw "Abstract Method" }
-    connect() { throw "Abstract Method" }
-    disconnect() { throw "Abstract Method" }
-    reconnect() { throw "Abstract Method" }
-}
-
-
 class WebsocketReliableChannel extends ReliableChannel {
     constructor() {
         super();
@@ -94,7 +22,7 @@ class WebsocketReliableChannel extends ReliableChannel {
     /**
      * Status tick function
      * 
-     * Called once a second by a timer.
+     * Called periodically by a timer.
      * It is a good idea to call this function whenever you make a change to the ws
      */
     staTick(){
@@ -133,7 +61,7 @@ class WebsocketReliableChannel extends ReliableChannel {
             console.warn("Shouldn't write right now");
         this.ws.send(msg);
         this.staTick();
-        console.info("[RC] TX " + msg);
+        console.info("[WSRC] TX " + msg);
     }
 
     isConnected() {

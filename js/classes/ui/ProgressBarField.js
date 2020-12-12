@@ -17,5 +17,7 @@ class ProgressBarField extends TextField{
         this.setStyle("background", "linear-gradient(90deg, "+this.color1+" "+
         (this.progress-0.5)+"%, "+this.color2+" "+(this.progress+0.5)+"%)");
     }
-
+    addClickListener(f){
+        this.element.addEventListener("click", f);
+    }
   }

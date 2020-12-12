@@ -128,7 +128,7 @@ class Synchronizr {
 		if (!t.txTimer)
 			t.txTimer = setInterval(function () {
 				if (t.pushToTarget(t.txTimerBytes))
-					stopTxTimer();
+					t.stopTxTimer();
 			}, 100);
 	}
 	stopTxTimer() {
@@ -268,6 +268,15 @@ class Synchronizr {
 				t.channel.write(t.op.SET_ID + t.toStr(id == null ? "" : id) + t.op.BEGIN_SYNC);
 			}
 		}
+	}
+
+	/**
+	 * Call this function when the connection status widget is clicked.
+	 * Some connections (Bluetooth) require user interaction for permission
+	 * to access priviliged functionality
+	 */
+	onConnClick(){
+		this.channel.onConnClick();
 	}
 
 	// State parsing

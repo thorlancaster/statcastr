@@ -58,7 +58,10 @@ class Initializer {
     l.loadScript("js/classes/viewdisplay/TeamStatsDisplay.js");
     l.loadScript("js/classes/viewdisplay/AdminViewDisplay.js");
     // Synchronizr
-    l.loadScript("js/classes/synchronizr/ReliableChannel.js");
+    l.loadScript("js/classes/synchronizr/1-ReliableChannel.js");
+    l.loadScript("js/classes/synchronizr/BluetoothSerial.js");
+    l.loadScript("js/classes/synchronizr/LoFiReliableChannel.js");
+    l.loadScript("js/classes/synchronizr/WebsocketReliableChannel.js");
     l.loadScript("js/classes/synchronizr/Synchronizr.js");
     // Main App
     l.loadScript("js/classes/Preferences.js");

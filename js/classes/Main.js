@@ -26,9 +26,16 @@ class Main {
         s.setStatusChangeCallback(t.sc.onSynchronizrStatusChange.bind(t.sc));
         s.setHashValidationDoneCallback(t.sc.onSynchronizrHvDone.bind(t.sc));
 
-        t.channel = new WebsocketReliableChannel();
-        t.channel.setTarget("wss://" + window.location.hostname, 1234);
-        // t.channel.setTarget("ws://localhost", 1234);
+        t.channel = new DelegateReliableChannel({"ws wss": new WebsocketReliableChannel(), "lfi": new LoFiReliableChannel()});
+        if(Preferences.useLofi && Credentials.isAdmin()){
+            // TODO dynamic channel target switching
+            t.channel.setTarget("lfi://localhost");
+        } else {
+            if (window.location.hostname == "localhost")
+                t.channel.setTarget("ws://localhost", 1234);
+            else
+                t.channel.setTarget("wss://" + window.location.hostname, 1234);
+        }
         s.setChannel(t.channel);
         t.channel.connect();
         console.log("SynchronizrMain: Channel started");
@@ -38,7 +45,7 @@ class Main {
 
         setInterval(t.sc.tick.bind(t.sc), 100);
 
-        if(params.get("standalone") == "true"){
+        if (params.get("standalone") == "true") {
             console.log("Standalone mode, back button disabled");
             t.disableBackButton();
         }
