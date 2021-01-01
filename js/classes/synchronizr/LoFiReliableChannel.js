@@ -30,6 +30,9 @@ class LoFiReliableChannel extends ReliableChannel {
         if (t.inCallback)
             t.inCallback();
         t.readyState = 1;
+        t.lastTxSuccess = false;
+        t.lastCmdSendMs = null;
+        t.writeLastSend = "T BESTBUGGS\n"; // RESET // TODO implement correctly
         if (t.opCallback)
             t.opCallback(); // TODO this maybe probably be called from here
     }
@@ -62,12 +65,13 @@ class LoFiReliableChannel extends ReliableChannel {
             } else {
                 var fullRx = (t.frameReadBuffer + msg.substring(3));
                 fullRx = t.phyUnescape(fullRx);
-                if(fullRx.startsWith("10-4 XXX"))
+                if(false && fullRx.startsWith("10-4 XXX"))
                     t.testResp(fullRx); // TODO XXX
                 else
                     t.readQueue.unshift(fullRx);
-                // TODO call on available callback
                 console.log("LoFi Rx: " + fullRx);
+                if(t.rxCallback)
+                    t.rxCallback();
                 t.frameReadBuffer = "";
             }
             t.lastCmdSendMs = null;
@@ -154,7 +158,7 @@ class LoFiReliableChannel extends ReliableChannel {
             t.readyState = 1;
         }
         var rs = t.readyState;
-        var ba = 0;
+        var ba = t.writeQueue.length; // TODO count messages not bytes
         if (t._rs != rs || t._ba != ba) {
             t._rs = rs;
             t._ba = ba;
@@ -177,7 +181,7 @@ class LoFiReliableChannel extends ReliableChannel {
         if (!t.lastTxSuccess) {
             if (t.lastCmdSendMs == null) { // If command has already been received
                 if (t.nextTxAttMs != null) {
-                    if (Date.now() > t.nextTxAttMs) {
+                    if (Date.now() > t.nextTxAttMs && t.port.canWrite()) {
                         t.nextTxAttMs = null;
                         // If it's been long enough, try re-sending it
                         t.port.write(t.writeLastSend);
@@ -287,17 +291,20 @@ class LoFiReliableChannel extends ReliableChannel {
     /**
     * @returns length of read queue
     */
-    available() { return readQueue.length; }
+    available() { return this.readQueue.length; }
 
     /**
      * @returns next message in the read queue, or null if queue empty
      */
-    read() { return readQueue.pop(); }
+    read() { return this.readQueue.pop(); }
 
     /**
      * @returns number of bytes soft-allowed to write
      */
-    canWrite() { return 10000000; }
+    canWrite() {
+        if (!this.isConnected()) return 0;
+        return 10000000;
+    }
 
     // The following are self-explanatory
     write(data) {
@@ -307,7 +314,7 @@ class LoFiReliableChannel extends ReliableChannel {
     isConnected() { return this.readyState == 1 }
     isClosed() { return this.readyState == 2 || this.readyState == 3 }
     connect() {
-        // TODO send a reinit
+        this.writeQueue.length = 0;
         if (this.readyState != 2) {
             this.readyState = 1;
             this.opCallback();

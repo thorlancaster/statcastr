@@ -53,6 +53,7 @@ class BluetoothSerial {
 					t.rxCharacteristic.addEventListener('characteristicvaluechanged', t.handleNotifications.bind(t));
 					t._isPairing = false;
 					t._isConnected = true;
+					t.busyWriting = false;
 					if(t._connCallback)
 						t._connCallback();
 				});
@@ -83,6 +84,7 @@ class BluetoothSerial {
 	}
 	handleDisconnect() {
 		var t = this;
+		t.busyWriting = false;
 		t._isConnected = false;
 		if(t._dconnCallback)
 		t._dconnCallback();
@@ -140,10 +142,22 @@ class BluetoothSerial {
 		return rtn;
 	}
 
+	canWrite(){
+		return this.busyWriting != true;
+	}
+
 	write(data) {
 		if (!this._isConnected)
 			throw "Not connected";
 		// this.log("Wrote " + data);
-		this.txCharacteristic.writeValue(this.str2ab(data));
+		this.busyWriting = true;
+		this.txCharacteristic.writeValue(this.str2ab(data))
+		.then(e => {
+			this.busyWriting = false;
+		})
+		.catch(e => {
+			this.busyWriting = false;
+			console.error('BluetoothSerial error: ', error);
+		})
 	}
 }

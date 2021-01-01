@@ -189,7 +189,8 @@ class Synchronizr {
 		}
 		if (t.hashValidationPending) { // Perform hash validation if pending
 			// t.hashValidationPending = false;
-			t.beginHashValidation(true);
+			// TODO was using true but it resulted in Hundefinedundefinedundefined
+			t.beginHashValidation(false);
 		}
 	}
 

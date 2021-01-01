@@ -329,9 +329,9 @@ class PlayByPlay {
 			return [rtn, idxs];
 		}
 		if (length > 0) {
-			for (var x = 0; x < t.plays.length; x++) {
-				rtn.push(t.plays[x]);
-				idxs.push(x);
+			for (var x = t.plays.length-1; x >= 0; x--) {
+				rtn.unshift(t.plays[x]);
+				idxs.unshift(x);
 				if (rtn.length == length)
 					return [rtn, idxs];
 			}
