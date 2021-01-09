@@ -76,27 +76,101 @@ class Synchronizr {
 		this.op = SYNCHRONIZR_OPCODES();
 	}
 
-	constructor() {
+	constructor(bus) {
 		var t = this;
+		t._bus = bus;
 		t.CONSTANTS();
+		t.status = "disconnected";
 		t.remoteState = { staticData: [], dynamicData: [], eventData: [] };
 		t.isAdmin = false;
+		t.eventId = null;
 		t.setLocalData([], [], []);
 		// t.setLocalDataClasses(null, null, null);
 		t.setChannel(null);
 		// t.setEventId(null);
-
 		t.txTimer = null;
 		t.autoSend = true; // If true, auto-send data on a timer if necessary
+		bus.subscribe(t.onBusMsg.bind(t));
+	}
+	onBusMsg(e) {
+		var t = this;
+		if (e.name == "synchronizr"){
+			if(e.type == "updreq" && e.newVal == "updateAndPush"){
+				t.updateFromModel(t._bus.getState().gameModel);
+				t.pushToTarget();
+			}
+			if(e.type == "updreq" && e.newVal == "reconnect"){
+				if(t.isAdmin && t.eventId != "null"){
+					t.loadFromStorage(t.eventId);
+					var sChange = true, dChange = true, eChange = true;
+					// debugger;
+					t._bus.publish(new MBMessage("upd", "synchronizr", { sChange, dChange, eChange, s: t.staticData, d: t.dynamicData, e: t.eventData }));
+				}
+				t.reconnect();
+			}
+		}
+		if (e.name == "event" && e.type == "chg") {
+			t.eventId = e.newVal;
+			// t.reconnect(); // TODO pending reconnects to prevent unusefull connect attempts
+		}
+		if (e.name == "admin" && e.type == "chg") {
+			t.isAdmin = e.newVal;
+			// t.reconnect();
+		}
 	}
 	end() {
 		stopTimer();
 	}
 
-    /**
-     * Set whether the client is an admin or not
-     * @param {Boolean} adm 
-     */
+	// Event handlers
+	onChannelCallback(e) {
+		var t = this;
+		t._bus.publish(new MBMessage("upd", "channel", e));
+		if (e.type == "close") {
+			t.status = "disconnected";
+		}
+		else if (e.type == "receive") {
+			if (t.status == "synchronizing") {
+				t.applyOpcodes(e.data);
+				t.status = "synchronized";
+			}
+			else if (t.status == "hashValPending") {
+				if (!e.data.startsWith(t.op.VALIDATE_HASH_RESP)) {
+					alert("Hash Validation error. Bad password?");
+					t.status = "disconnected";
+				}
+				else {
+					t.applyOpcodes(e.data);
+					t.status = "synchronized";
+				}
+				// TODO if authentication error, die with bad password
+				// TODO if validation is faulty, send missing data
+				// TODO if validation fails, quene necessary data
+			}
+			else if (t.status == "synchronized") {
+				t.applyOpcodes(e.data);
+			}
+		}
+		else if (e.type == "connect") {
+			if (t.status == "disconnected") {
+				if (t.isAdmin && t.eventId != "null") {
+					t.channel.write(t.op.REQUEST_ADMIN + t.getCredential() + t.op.SET_ID + t.toStr(t.eventId == null ? "" : t.eventId));
+					t.beginHashValidation();
+					t.status = "hashValPending";
+				}
+				else {
+					t.channel.write(t.op.SET_ID + t.toStr(t.eventId == "null" || t.eventId == null ? "" : t.eventId) + t.op.BEGIN_SYNC);
+					t.status = "synchronizing";
+				}
+			}
+		}
+	}
+
+
+	/**
+	 * Set whether the client is an admin or not
+	 * @param {Boolean} adm 
+	 */
 	setAdmin(adm) {
 		var t = this;
 		if (t.isAdmin != adm) {
@@ -143,56 +217,56 @@ class Synchronizr {
 		var t = this;
 		t.channel = c;
 		if (c) {
-			c.setInitCallback(t.onChannelInit.bind(t));
-			c.setReceiveCallback(t.onChannelReceive.bind(t));
-			c.setCloseCallback(t.onChannelClose.bind(t));
-			c.setOpenCallback(t.onChannelOpen.bind(t));
-			c.setStatusChangeCallback(t.onChannelStaChg.bind(t));
+			c.setCallback(t.onChannelCallback.bind(t));
+			// c.setInitCallback(t.onChannelInit.bind(t));
+			// c.setReceiveCallback(t.onChannelReceive.bind(t));
+			// c.setCloseCallback(t.onChannelClose.bind(t));
+			// c.setOpenCallback(t.onChannelOpen.bind(t));
+			// c.setStatusChangeCallback(t.onChannelStaChg.bind(t));
 		}
 	}
 
-	// Event handlers
-	onChannelReceive() {
-		while (this.channel.available()) {
-			this.onChannelMessage(this.channel.read())
-		}
-	}
-	onChannelMessage(txt) {
-		this.applyOpcodes(txt);
-	}
-	onChannelStaChg(x, y, z){
-		if(this.staChgCallback)
-			this.staChgCallback(x, y, z);
-	}
-	onChannelClose() {
-		var t = this;
-		console.log("Channel Closed");
-		// When the channel dies, get set up for a reconnection
-		t.setEventIdPending = true;
-		if (t.isAdmin)
-			t.hashValidationPending = true;
-	}
-	onChannelInit() {
-		console.log("Channel Init");
-	}
-	onChannelOpen() {
-		var t = this;
-		var seip = false;
-		if (t.setEventIdPending || t.hashValidationPending) { // Set event ID if pending
-			seip = true;
-			t.setEventIdPending = false;
-			t.setEventId(t.eventId, t.isAdmin);
-		}
-		if (t.verifyPasswordPending) {
-			// t.verifyPasswordPending = false;
-			t.beginVerifyPassword(t._vp_un, t._vp_pw);
-		}
-		if (t.hashValidationPending) { // Perform hash validation if pending
-			// t.hashValidationPending = false;
-			// TODO was using true but it resulted in Hundefinedundefinedundefined
-			t.beginHashValidation(false);
-		}
-	}
+	// onChannelReceive() {
+	// 	while (this.channel.available()) {
+	// 		this.onChannelMessage(this.channel.read())
+	// 	}
+	// }
+	// onChannelMessage(txt) {
+	// 	this.applyOpcodes(txt);
+	// }
+	// onChannelStaChg(x, y, z){
+	// 	if(this.staChgCallback)
+	// 		this.staChgCallback(x, y, z);
+	// }
+	// onChannelClose() {
+	// 	var t = this;
+	// 	console.log("Channel Closed");
+	// 	// When the channel dies, get set up for a reconnection
+	// 	t.setEventIdPending = true;
+	// 	if (t.isAdmin)
+	// 		t.hashValidationPending = true;
+	// }
+	// onChannelInit() {
+	// 	console.log("Channel Init");
+	// }
+	// onChannelOpen() {
+	// 	var t = this;
+	// 	var seip = false;
+	// 	if (t.setEventIdPending || t.hashValidationPending) { // Set event ID if pending
+	// 		seip = true;
+	// 		t.setEventIdPending = false;
+	// 		t.setEventId(t.eventId, t.isAdmin);
+	// 	}
+	// 	if (t.verifyPasswordPending) {
+	// 		// t.verifyPasswordPending = false;
+	// 		t.beginVerifyPassword(t._vp_un, t._vp_pw);
+	// 	}
+	// 	if (t.hashValidationPending) { // Perform hash validation if pending
+	// 		// t.hashValidationPending = false;
+	// 		// TODO was using true but it resulted in Hundefinedundefinedundefined
+	// 		t.beginHashValidation(false);
+	// 	}
+	// }
 
 	// Set the sources for the Static, Dynamic, and Event lists
 	setLocalData(s, d, e) {
@@ -203,9 +277,9 @@ class Synchronizr {
 
 	// Clear hash validation pending. Call after getting and error and before reconnecting
 	// To avoid a never-ending stream of errors
-	clearHashValidationPending() {
-		this.hashValidationPending = false;
-	}
+	// clearHashValidationPending() {
+	// 	this.hashValidationPending = false;
+	// }
 
 	reconnect() {
 		this.channel.reconnect();
@@ -218,65 +292,69 @@ class Synchronizr {
 	//     this.eventDataClass = e;
 	// }
 
-	// Set the function that will be called when we have new data
-	setUpdateCallback(f) {
-		this.updCbFn = f;
+	setCallback(f) {
+		this._callback = f;
 	}
 
-	// Set the function that will be called when password is verified (good or bad)
-	setVerificationCallback(f) {
-		this.verCbFn = f;
-	}
+	// // Set the function that will be called when we have new data
+	// setUpdateCallback(f) {
+	// 	this.updCbFn = f;
+	// }
 
-	// Set the function that will be called immediately after the connection opens, but before the hash comparison
-	setPreConnectionCallback(f) {
-		this.precCbFn = f;
-	}
+	// // Set the function that will be called when password is verified (good or bad)
+	// setVerificationCallback(f) {
+	// 	this.verCbFn = f;
+	// }
 
-	setHashValidationDoneCallback(f){
-		this.hvDoneCbFn = f;
-	}
+	// // Set the function that will be called immediately after the connection opens, but before the hash comparison
+	// setPreConnectionCallback(f) {
+	// 	this.precCbFn = f;
+	// }
 
-	// See ReliableChannel
-    setStatusChangeCallback(cb){
-        this.staChgCallback = cb;
-	}
+	// setHashValidationDoneCallback(f){
+	// 	this.hvDoneCbFn = f;
+	// }
 
-	// Set the function that will be called when an error occurs
-	setErrorCallback(f) {
-		this.errCbFn = f;
-	}
+	// // See ReliableChannel
+	// setStatusChangeCallback(cb){
+	//     this.staChgCallback = cb;
+	// }
+
+	// // Set the function that will be called when an error occurs
+	// setErrorCallback(f) {
+	// 	this.errCbFn = f;
+	// }
 
 
-    /**
-     * Set the event to listen to. If null, a list of events will be requested
-     * @param {String} id 
-     * @param {Boolean} isAdmin If true, connect as an administrator instead of a guest
-     */
-	setEventId(id, isAdmin) {
-		var t = this;
-		t.eventId = id;
-		t.isAdmin = isAdmin;
-		if (!t.channel || !t.channel.isConnected())
-			t.setEventIdPending = true;
-		else {
-			if (isAdmin) {
-				t.channel.write(
-					t.op.REQUEST_ADMIN + t.getCredential() +
-					t.op.SET_ID +
-					t.toStr(id == null ? "" : id));
-			} else {
-				t.channel.write(t.op.SET_ID + t.toStr(id == null ? "" : id) + t.op.BEGIN_SYNC);
-			}
-		}
-	}
+	// /**
+	//  * Set the event to listen to. If null, a list of events will be requested
+	//  * @param {String} id 
+	//  * @param {Boolean} isAdmin If true, connect as an administrator instead of a guest
+	//  */
+	// setEventId(id, isAdmin) {
+	// 	var t = this;
+	// 	t.eventId = id;
+	// 	t.isAdmin = isAdmin;
+	// 	if (!t.channel || !t.channel.isConnected())
+	// 		t.setEventIdPending = true;
+	// 	else {
+	// 		if (isAdmin) {
+	// 			t.channel.write(
+	// 				t.op.REQUEST_ADMIN + t.getCredential() +
+	// 				t.op.SET_ID +
+	// 				t.toStr(id == null ? "" : id));
+	// 		} else {
+	// 			t.channel.write(t.op.SET_ID + t.toStr(id == null ? "" : id) + t.op.BEGIN_SYNC);
+	// 		}
+	// 	}
+	// }
 
 	/**
 	 * Call this function when the connection status widget is clicked.
 	 * Some connections (Bluetooth) require user interaction for permission
 	 * to access priviliged functionality
 	 */
-	onConnClick(){
+	onConnClick() {
 		this.channel.onConnClick();
 	}
 
@@ -367,6 +445,7 @@ class Synchronizr {
 		this.updateLocal(sChange, dChange, eChange);
 		this.updateStorage(this.eventId, sChange, dChange, eChange);
 	}
+
 	updateStorage(eventId, sChange, dChange, eChange) {
 		var t = this;
 		if (sChange) { t.updateStorage0(eventId + "-s", t.staticData, sChange); }
@@ -374,38 +453,38 @@ class Synchronizr {
 		if (eChange) { t.updateStorage0(eventId + "-e", t.eventData, eChange); }
 	}
 
-    /**
-     * Loads an event from storage, and then optionally reloads the local state via updateLocal()
-     * @param {String} eventId 
-     * @param {Boolean} updateLocal True to update the local state. If omitted, defaults to true
+	/**
+	 * Loads an event from storage, and then optionally reloads the local state via updateLocal()
+	 * @param {String} eventId 
+	 * @param {Boolean} updateLocal True to update the local state. If omitted, defaults to false
 	 * @param {Object} template [Optional] If the event is not found, [static, dynamic, event] data will be copied from this object
-     */
+	 */
 	loadFromStorage(eventId, updateLocal, template) {
 		var t = this;
 		t.staticData = t.loadFromStorage0(eventId + "-s");
 		t.dynamicData = t.loadFromStorage0(eventId + "-d");
 		t.eventData = t.loadFromStorage0(eventId + "-e");
-		if(t.staticData.length == 0 && t.dynamicData.length == 0 && t.eventData.length == 0 && template){
+		if (t.staticData.length == 0 && t.dynamicData.length == 0 && t.eventData.length == 0 && template) {
 			t.staticData = [...template.static];
 			t.dynamicData = [...template.dynamic];
 			t.eventData = [...template.event];
 		}
-		if (updateLocal != false)
+		if (updateLocal)
 			t.updateLocal(true, true, true);
 	}
-	canLoadFromStorage(eventId){
+	canLoadFromStorage(eventId) {
 		var t = this;
-		return t.loadFromStorage0(eventId + "-s",  true)
-		|| t.loadFromStorage0(eventId + "-d",  true)
-		|| t.loadFromStorage0(eventId + "-e",  true);
+		return t.loadFromStorage0(eventId + "-s", true)
+			|| t.loadFromStorage0(eventId + "-d", true)
+			|| t.loadFromStorage0(eventId + "-e", true);
 	}
-    /**
-     * Save an array to local storage.
-     * Array will be sharded into a series of chunks named {key}-0, {key}-1, etc.
-     * @param {String} key 
-     * @param {Array<Uint8Array>} arr 
-     * @param {*} chg 
-     */
+	/**
+	 * Save an array to local storage.
+	 * Array will be sharded into a series of chunks named {key}-0, {key}-1, etc.
+	 * @param {String} key 
+	 * @param {Array<Uint8Array>} arr 
+	 * @param {*} chg 
+	 */
 	updateStorage0(key, arr, chg) {
 		var t = this;
 		var lim = 1024; // Bytes per entry
@@ -436,18 +515,18 @@ class Synchronizr {
 		}
 		// console.log(key, arr, chg);
 	}
-    /**
-     * Load and return an array from local storage
-     * @param {String} key
+	/**
+	 * Load and return an array from local storage
+	 * @param {String} key
 	 * @param {Boolean} test True to test if loading is possible, but not load
-     */
+	 */
 	loadFromStorage0(key, test) {
 		var shardNum = 0;
 		var rtn = [];
 		while (1) {
 			var shard = localStorage.getItem(key + shardNum++);
 			if (!shard) break;
-			else if(test) return true;
+			else if (test) return true;
 			var shardPtr = 0;
 			while (shardPtr < shard.length) {
 				var len = shard.charCodeAt(shardPtr++) + shard.charCodeAt(shardPtr++);
@@ -461,73 +540,70 @@ class Synchronizr {
 		return rtn;
 	}
 
-	invokeErrorCallback(errCode) {
-		if (this.errCbFn)
-			this.errCbFn(errCode);
-	}
-	invokeHashValDoneCallback(){
-		if (this.hvDoneCbFn)
-			this.hvDoneCbFn();
-	}
-	invokePreConnectionCallback() {
-		if (this.precCbFn)
-			this.precCbFn();
-	}
+	// invokeErrorCallback(errCode) {
+	// 	if (this.errCbFn)
+	// 		this.errCbFn(errCode);
+	// }
+	// invokeHashValDoneCallback() {
+	// 	if (this.hvDoneCbFn)
+	// 		this.hvDoneCbFn();
+	// }
+	// invokePreConnectionCallback() {
+	// 	if (this.precCbFn)
+	// 		this.precCbFn();
+	// }
 
 	/**
 	 * Begin the process of password validation with the server. The server will (eventually) return
 	 * the result of the verify operation, along with what the credentials were.
 	 */
-	beginVerifyPassword(uname, pw) {
-		var t = this;
-		if (!t.channel || !t.channel.isConnected()) {
-			t.verifyPasswordPending = true;
-			t._vp_un = uname;
-			t._vp_pw = pw;
-		}
-		else {
-			t.channel.write(t.op.VERIFY_PASSWORD_REQ + t.getCredential(uname, pw));
-		}
-	}
+	// beginVerifyPassword(uname, pw) {
+	// 	var t = this;
+	// 	if (!t.channel || !t.channel.isConnected()) {
+	// 		t.verifyPasswordPending = true;
+	// 		t._vp_un = uname;
+	// 		t._vp_pw = pw;
+	// 	}
+	// 	else {
+	// 		t.channel.write(t.op.VERIFY_PASSWORD_REQ + t.getCredential(uname, pw));
+	// 	}
+	// }
 
-	finishVerifyPassword(result, username, password) {
-		var t = this;
-		t.verifyPasswordPending = false;
-		if (t.verCbFn)
-			t.verCbFn(result, username, password);
-	}
+	// finishVerifyPassword(result, username, password) {
+	// 	var t = this;
+	// 	t.verifyPasswordPending = false;
+	// 	if (t.verCbFn)
+	// 		t.verCbFn(result, username, password);
+	// }
 
-    /**
-     * Begin the process of hash validation with the server. If hash validation fails,
-     * failing parts will be force-updated from the client to the server.
-     * You should only call this function if you are admin.
-     * If not connected, hash validation will start when the connection opens
-     * @param noUpdate True to not update internal hash state; sends a duplicate of the last attempt
-     */
+	/**
+	 * Begin the process of hash validation with the server. If hash validation fails,
+	 * failing parts will be force-updated from the client to the server.
+	 * You should only call this function if you are admin.
+	 * If not connected or not admin, hash validation will fail with a warning
+	 */
 	beginHashValidation(noUpdate) {
 		var t = this;
-		if(!t.isAdmin){
+		if (!t.channel.isConnected()) {
+			console.warn("Must be connected for beginHashValidation");
+			return;
+		}
+		if (!t.isAdmin) {
 			console.warn("Must be admin for beginHashValidation");
 			return;
 		}
-		if (!noUpdate) {
-			t._hv_sh = t.getHash(t.staticData).substring(0, 16);
-			t._hv_dh = t.getHash(t.dynamicData).substring(0, 16);
-			t._hv_eh = t.getHash(t.eventData).substring(0, 16);
-			t._hv_id = t.getHash(Math.random()).substring(0, 16);
-		}
-		if (!t.channel || !t.channel.isConnected())
-			t.hashValidationPending = true;
-		else {
-			t.channel.write(t.op.VALIDATE_HASH_REQ + t._hv_sh + t._hv_dh + t._hv_eh + t._hv_id);
-		}
+		t._hv_sh = t.getHash(t.staticData).substring(0, 16);
+		t._hv_dh = t.getHash(t.dynamicData).substring(0, 16);
+		t._hv_eh = t.getHash(t.eventData).substring(0, 16);
+		t._hv_id = t.getHash(Math.random()).substring(0, 16);
+		t.channel.write(t.op.VALIDATE_HASH_REQ + t._hv_sh + t._hv_dh + t._hv_eh + t._hv_id);
 	}
-    /**
-     * Called by parseBytecode() when a hash validation response packet is received.
-     * Updates the [static, dynamic, event] data if it doesn't match.
-     * @param {Byte} flags Byte with highest bits set for [static, dynamic, event] data match
-     * @param {String} id To ensure that the received packet came from the last sent one
-     */
+	/**
+	 * Called by parseBytecode() when a hash validation response packet is received.
+	 * Updates the [static, dynamic, event] data if it doesn't match.
+	 * @param {Byte} flags Byte with highest bits set for [static, dynamic, event] data match
+	 * @param {String} id To ensure that the received packet came from the last sent one
+	 */
 	finishHashValidation(flags, id) {
 		var t = this;
 		t.hashValidationPending = false;
@@ -544,8 +620,8 @@ class Synchronizr {
 		else r.dynamicData = [...t.dynamicData];
 		if (!eSame) r.eventData.length = 0;
 		else r.eventData = [...t.eventData];
-		t.pushToTarget(0);
-		t.invokeHashValDoneCallback();
+		t.pushToTarget(0); // Send the data up the wire
+		// t.invokeHashValDoneCallback();
 	}
 	getHash(arr) {
 		var all = [];
@@ -560,15 +636,15 @@ class Synchronizr {
 
 	updateLocal(sChange, dChange, eChange) {
 		var t = this;
-		t.updCbFn(sChange, dChange, eChange, t.staticData, t.dynamicData, t.eventData);
+		t._bus.publish(new MBMessage("upd", "synchronizr", { sChange, dChange, eChange, s: t.staticData, d: t.dynamicData, e: t.eventData }));
 	}
 
-    /**
-     * Update internal state to match state of an object (such as a GameModel).
-     * Also saves state to LocalStorage
-     * @param {Object} model Object that implements the Synchronizr Compatibility interface
+	/**
+	 * Update internal state to match state of an object (such as a GameModel).
+	 * Also saves state to LocalStorage
+	 * @param {Object} model Object that implements the Synchronizr Compatibility interface
 	 * @param {Boolean} skipLocalStorage Defaults to false
-     */
+	 */
 	updateFromModel(model, skipLocalStorage) {
 		var t = this, si = false, di = false, ei = false;
 		if (model.isStaticInvalid()) {
@@ -587,7 +663,7 @@ class Synchronizr {
 			model.revalidateDynamic();
 		}
 		// TODO handle partial saves more efficiently
-		if(skipLocalStorage != true)
+		if (skipLocalStorage != true)
 			t.updateStorage(t.eventId, si, di, ei);
 	}
 	mergeArrs(dest, src) {
@@ -599,14 +675,14 @@ class Synchronizr {
 			dest.length = src.length;
 	}
 
-    /**
-     * Push the difference between this and the simulated target up the channel.
-     * If auto-send is enabled (default), additional chunks will be sent automatically
-     * @param {Integer} limBytes Max number of bytes soft-allowed to send.
-     *      If omitted it will be strategically chosen. If zero, it means infinity.
-     * @returns {Boolean} true if the synchronization is complete, false if the
-     *      synchronization needs to send more, null if the channel is full
-     */
+	/**
+	 * Push the difference between this and the simulated target up the channel.
+	 * If auto-send is enabled (default), additional chunks will be sent automatically
+	 * @param {Integer} limBytes Max number of bytes soft-allowed to send.
+	 *      If omitted it will be strategically chosen. If zero, it means infinity.
+	 * @returns {Boolean} true if the synchronization is complete, false if the
+	 *      synchronization needs to send more, null if the channel is full
+	 */
 	pushToTarget(limBytes) {
 		var t = this;
 		if (!t.channel.canWrite()) {
@@ -628,12 +704,12 @@ class Synchronizr {
 	}
 
 	// State unparsing
-    /**
-     * Generate bytecode to bring another state in sync with this Synchronizr
-     * @param {Object} otherState Simulated state of other end, gets modified during call
-     * @param {Integer} limBytes Max number of bytes soft-allowed to send. If omitted or zero, it means infinity.
-     * @returns a Tuple of (SyncDirty, Bytecode)
-     */
+	/**
+	 * Generate bytecode to bring another state in sync with this Synchronizr
+	 * @param {Object} otherState Simulated state of other end, gets modified during call
+	 * @param {Integer} limBytes Max number of bytes soft-allowed to send. If omitted or zero, it means infinity.
+	 * @returns a Tuple of (SyncDirty, Bytecode)
+	 */
 	generateBytecode(otherState, limBytes) {
 		var o = otherState;
 		var t = this;
@@ -668,14 +744,14 @@ class Synchronizr {
 		return [db1 || db2 || db3, rtn];
 	}
 
-    /**
-     * Generate bytecode for the difference on one corresponding array
-     * @param {Array} data Synchronizr Data array (typically Static, Dynamic, or Event)
-     * @param {Array} otherData Synchronizr Data array that represents target
-     * @param {Integer} limBytes Max number of bytes soft-allowed to send
-     * @param {Integer} usedBytes Bytes already consumed
-     * @returns a Tuple of (SyncDirty, Bytecode)
-     */
+	/**
+	 * Generate bytecode for the difference on one corresponding array
+	 * @param {Array} data Synchronizr Data array (typically Static, Dynamic, or Event)
+	 * @param {Array} otherData Synchronizr Data array that represents target
+	 * @param {Integer} limBytes Max number of bytes soft-allowed to send
+	 * @param {Integer} usedBytes Bytes already consumed
+	 * @returns a Tuple of (SyncDirty, Bytecode)
+	 */
 	_generateBytecode0(data, otherData, limBytes, usedBytes) {
 		var t = this;
 		var rtn = [];
@@ -737,6 +813,13 @@ class Synchronizr {
 		return true;
 	}
 
+	/**
+	 * @returns Event type ("list", "fbgame", "bbgame", etc.) String form of first slot in StaticData
+	 */
+	getEventType() {
+		return Synchronizr.byteArrToStr(this.staticData[0]);
+	}
+
 
 	// Utility Functions
 	// Convert a String into a length-prefixed string for sending
@@ -744,6 +827,24 @@ class Synchronizr {
 		var l = s.length;
 		if (l > 65533) throw "Input string too long"
 		return String.fromCharCode(l >> 8) + String.fromCharCode(l & 0xFF) + s;
+	}
+
+	// Debugging function to get the state as string
+	getStaticStr(){
+		return Synchronizr.byteArrArrToStrArr(this.staticData);
+	}
+	getDynamicStr(){
+		return Synchronizr.byteArrArrToStrArr(this.dynamicData);
+	}
+	getEventStr(){
+		return Synchronizr.byteArrArrToStrArr(this.eventData);
+	}
+	static byteArrArrToStrArr(ba){
+		var rtn = [];
+		for(var x = 0; x < ba.length; x++){
+			rtn.push(Synchronizr.byteArrToStr(ba[x]));
+		}
+		return rtn;
 	}
 
 	static byteArrToStr(ba) {
@@ -776,6 +877,29 @@ class Synchronizr {
 				rtn[len++] = arrs[x][i];
 		}
 		return rtn;
+	}
+
+	static parseSingleEventListing(arrx) {
+		var ptr = [0];
+		var id = Synchronizr.byteArrToStr(Synchronizr.parseField(arrx, ptr));
+		var type = Synchronizr.byteArrToStr(Synchronizr.parseField(arrx, ptr));
+		var hInfo = Synchronizr.parseField(arrx, ptr);
+		var gInfo = Synchronizr.parseField(arrx, ptr);
+		var hPtr = [0];
+		var gPtr = [0];
+		var hTown = Synchronizr.byteArrToStr(Synchronizr.parseField(hInfo, hPtr));
+		var hMascot = Synchronizr.byteArrToStr(Synchronizr.parseField(hInfo, hPtr));
+		var hAbbr = Synchronizr.byteArrToStr(Synchronizr.parseField(hInfo, hPtr));
+
+		var gTown = Synchronizr.byteArrToStr(Synchronizr.parseField(gInfo, gPtr));
+		var gMascot = Synchronizr.byteArrToStr(Synchronizr.parseField(gInfo, gPtr));
+		var gAbbr = Synchronizr.byteArrToStr(Synchronizr.parseField(gInfo, gPtr));
+
+		var location = Synchronizr.byteArrToStr(Synchronizr.parseField(arrx, ptr));
+		var comments = Synchronizr.byteArrToStr(Synchronizr.parseField(arrx, ptr));
+		var startTime = Synchronizr.byteArrToStr(Synchronizr.parseField(arrx, ptr));
+		var gender = Synchronizr.byteArrToStr(Synchronizr.parseField(arrx, ptr));
+		return { id, type, hTown, hMascot, hAbbr, gTown, gMascot, gAbbr, location, comments, startTime, gender };
 	}
 
     /**

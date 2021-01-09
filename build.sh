@@ -1,3 +1,8 @@
+# Variable initialization
+CACHE_UID=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 16 | head -n 1)
+INSTALL_PATH=/mnt/LSN/var/www/redhawksports/statcastr
+
+# Build process
 rm -Rf build
 mkdir build
 echo "building JS sub-bundles"
@@ -19,7 +24,11 @@ echo "building page"
 cat ../resources/index.bundle.html > index.html
 cat ../css/*.css > bundle.all.css
 mkdir js
-cat ../js/sw.js > sw.js
+
+echo "building service worker"
+cat ../js/sw.js | awk NR\>1 > sw.preproc.js
+echo "var cacheHash = '$CACHE_UID';" > sw.autogen.js
+cat sw.autogen.js sw.preproc.js > sw.js
 
 echo "copying resources"
 cp -r ../resources resources
@@ -27,6 +36,8 @@ cp -r ../favicon.ico favicon.ico
 cp -r ../favicon.ico favicon.ico
 
 echo "cleaning up"
+rm sw.preproc.js
+rm sw.autogen.js
 rm bundle-classes.js
 rm bundle-sports.js
 rm bundle-libs.js
@@ -36,3 +47,13 @@ rm bundle-classes-synchronizr.js
 rm bundle-classes-ui.js
 rm bundle-classes-view.js
 rm bundle-classes-viewdisplay.js
+
+echo $INSTALL_PATH
+
+if [[ $1 = "install" ]]; then
+	echo "Installing to production"
+	cp bundle.all.css $INSTALL_PATH/bundle.all.css
+	cp bundle.all.js $INSTALL_PATH/bundle.all.js
+	cp sw.js $INSTALL_PATH/sw.js
+	# Todo "install all"
+fi

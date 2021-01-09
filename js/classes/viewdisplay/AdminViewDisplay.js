@@ -1,6 +1,6 @@
 
 class AdminViewDisplay extends ViewDisplay {
-	constructor(model, synchronizrPtr, scoreboardUpdateCb) {
+	constructor(model, bus) {
 		super();
 		var t = this;
 		t.model = model;
@@ -9,7 +9,7 @@ class AdminViewDisplay extends ViewDisplay {
 		t.setStyle("margin-top", "1px");
 		t.addClass("adminViewDisplay");
 		t.setStyle("flexDirection", "column");
-		t.wdg = new AdminWidget(model, synchronizrPtr, scoreboardUpdateCb);
+		t.wdg = new AdminWidget(model, bus);
 		t.appendChild(t.wdg);
 	}
 
@@ -32,7 +32,7 @@ class AdminViewDisplay extends ViewDisplay {
 }
 
 class AdminWidget extends UIPanel {
-	constructor(model, synchronizrPtr, scoreboardUpdateCb) {
+	constructor(model, bus) {
 		super();
 		var t = this;
 		t.SPACER_SZ = "0.3em";
@@ -43,8 +43,8 @@ class AdminWidget extends UIPanel {
 		t.VIBE_CLOCK_START = [30, 100, 30, 70, 30, 65, 30, 45, 30, 30, 20, 20, 10, 10];
 		t.VIBE_CLOCK_STOP = [10, 10, 20, 20, 30, 30, 30, 45, 30, 60, 30, 80, 30, 120, 20];
 		t.model = model;
-		t.synchronizrPtr = synchronizrPtr;
-		t.scoreboardUpdateCb = scoreboardUpdateCb;
+		t.bus = bus;
+		t.bus.subscribe(t.onBusMessage.bind(t));
 		t.addClass("adminWidget");
 		t.setStyle("flexDirection", "column");
 		t.setStyle("fontSize", "1.3em");
@@ -175,42 +175,51 @@ class AdminWidget extends UIPanel {
 		d.show();
 	}
 
-	getSynchronizr() { return this.synchronizrPtr[0] }
+	onBusMessage(e){
+		var t = this;
+		if(t.bus.getState().admin){
+			if(e.type == "upd" && e.name == "channel"){ // Connection status messages
+				t.updateConnStatus(e.newVal.status, null, 0);
+			}
+		}
+	}
+
+	getSynchronizr() {throw "Deprecated: AdminViewDisplay does not manipulate Synchronizr directly"; return this.synchronizrPtr[0] }
 
 	update() {
 		super.update();
 		var t = this;
 		t.pdt.setStateFromModel(t.model);
-		t.updateConnStatus();
 		t.updateCkBtnSelState();
 	}
 
-	updateConnStatus() {
-		var sta = this.model.connStatus;
+	updateConnStatus(readyState, status, bytes) {
 		var el = this.connStatus;
-		if (!sta) return;
-		if (sta.readyState == 0) {
+		if(status == null)
+			status = "Disconnected";
+		if (readyState == 0) {
 			el.setColors("#932", "var(--main-bg2)");
 			el.setProgress(100);
-			el.setText(sta.status);
+			el.setText(status);
 		}
-		else if (sta.readyState != 1) {
+		else if (readyState != 1) {
 			el.setColors("#932", "var(--main-bg2)");
 			el.setProgress(100);
-			el.setText(sta.status);
+			el.setText(status);
 		}
 		else {
 			el.setColors("#293", "var(--main-bg2)");
-			if (sta.buffered)
-				el.setText(sta.buffered + " bytes left");
+			if (bytes)
+				el.setText(bytes + " bytes left");
 			else
 				el.setText("Connected");
-			el.setProgress((500 - sta.buffered) / 5);
+			el.setProgress((500 - bytes) / 5);
 		}
 	}
 
 	onConnClick(){
-		this.getSynchronizr().onConnClick();
+		// TODO BUS broadcast "UPD" "synClick" message
+		// this.getSynchronizr().onConnClick();
 	}
 
 	vibrate(pattern) {
@@ -409,7 +418,6 @@ class AdminWidget extends UIPanel {
 			default:
 				assert(false, "lastPlaySelection invalid");
 		}
-		var s = t.getSynchronizr();
 		var clk = t.model.clock;
 		if (lps == "Sub") {
 			// Calculate pOld and pNew, representing the existing and new onCourt player ids
@@ -634,8 +642,8 @@ class AdminWidget extends UIPanel {
 		}
 		else {
 			var scale = -0.5 * (Math.tanh((dTime-150)/100)) + 0.7;
-			c.nudge += -1000 * diff * scale;
-			t.scoreboardUpdateCb();
+			c.nudge += -200 * diff * scale;
+			// TODO scoreboard update calback via BUS
 		}
 	}
 	onClockXLong() {
@@ -670,7 +678,7 @@ class AdminWidget extends UIPanel {
 	 * @param {Integer} type 
 	 */
 	updateAll(type) {
-		var t = this, s = this.getSynchronizr(), m = this.model;
+		var t = this, b = t.bus, m = this.model;
 		var ms = m.clock.millisLeft, pd = m.clock.period;
 		switch (type) {
 			case 1:
@@ -679,47 +687,51 @@ class AdminWidget extends UIPanel {
 					m.reloadFromPBP();
 				} catch (e) { console.error("Error while admin updating", e); }
 				m.clock.millisLeft = ms; m.clock.period = pd;
-				t.scoreboardUpdateCb(); // Update the scoreboard
+				b.publish(new MBMessage("upd", "admin")); // Update the local scoreboard
 				m.invalidateStatic();
 				m.invalidateDynamic(); // Never hurts to update the clock too
 				m.invalidateEvent();
-				s.updateFromModel(m); // Have synchronizr update its local state
-				s.pushToTarget(); // Send it down the wire
+				b.publish(new MBMessage("updreq", "synchronizr", "updateAndPush"));
+				// s.updateFromModel(m); // Have synchronizr update its local state
+				// s.pushToTarget(); // Send it down the wire
 				break;
 			case 2:
 				try {
 					m.reloadFromPBP(); // Update all plays in PBP to model
 				} catch (e) { console.error("Error while admin updating", e); }
 				m.clock.millisLeft = ms; m.clock.period = pd; // Save clock so it doesn't change
-				t.scoreboardUpdateCb(); // Update the scoreboard
+				b.publish(new MBMessage("upd", "admin")); // Update the local scoreboard
 				m.invalidateDynamic(); // Never hurts to update the clock too
 				m.invalidateEvent(); // Mark all events invalidated for Synchronizr
-				s.updateFromModel(m); // Have synchronizr update its local state
-				s.pushToTarget(); // Send it down the wire
+				b.publish(new MBMessage("updreq", "synchronizr", "updateAndPush"));
+				// s.updateFromModel(m); // Have synchronizr update its local state
+				// s.pushToTarget(); // Send it down the wire
 				break;
 			case 3:
 				try {
 					m.updateFromPBP(); // Update last play in PBP to model
 				} catch (e) { console.error("Error while admin updating", e); }
 				m.clock.millisLeft = ms; m.clock.period = pd; // Save clock so it doesn't change
-				t.scoreboardUpdateCb(); // Update the scoreboard
+				b.publish(new MBMessage("upd", "admin")); // Update the local scoreboard
 				m.invalidateDynamic(); // Never hurts to update the clock too
 				m.invalidateEvent(1); // Mark 1 event invalidated for Synchronizr
-				s.updateFromModel(m); // Have synchronizr update its local state
-				s.pushToTarget(); // Send it down the wire
+				b.publish(new MBMessage("updreq", "synchronizr", "updateAndPush"));
+				// s.updateFromModel(m); // Have synchronizr update its local state
+				// s.pushToTarget(); // Send it down the wire
 				break;
 			case 4:
-				m.invalidateDynamic();
-				s.updateFromModel(m);
-				t.scoreboardUpdateCb();
-				s.pushToTarget();
+				m.invalidateDynamic(); // Invalidate the clock for synchronizr
+				// s.updateFromModel(m);
+				b.publish(new MBMessage("upd", "admin")); // Update the local scoreboard
+				// s.pushToTarget();
+				b.publish(new MBMessage("updreq", "synchronizr", "updateAndPush"));
 				break;
 			default:
 				assert(false, "Invalid type for updateAll()");
 		}
 	}
 
-	showSetClockDialog(callback, clk) { // TODO should a SET_CLOCK play be added (checkbox)
+	showSetClockDialog(callback, clk) { // TODO check the box if the period is changing
 		var t = this;
 		var time = clk.getTime();
 		var ms0 = clk.millisLeft;

@@ -16,6 +16,7 @@ class Initializer {
     // Dependencies
     l.loadScript("js/libs/utils.js");
     l.loadScript("js/classes/MD5.js");
+    l.loadScript("js/classes/Statefull.js");
     // Model
     l.loadScript("js/classes/model/GameModel.js");
     l.loadScript("js/classes/model/basketball/BasketballGameModel.js");
@@ -48,15 +49,21 @@ class Initializer {
     l.loadScript("js/classes/components/TeamStatsDisplayTable.js");
     // View
     l.loadScript("js/classes/view/1-View.js");
+    l.loadScript("js/classes/view/LoadingFeedView.js");
     l.loadScript("js/classes/view/ScoreboardView.js");
     l.loadScript("js/classes/view/TeamStatsView.js");
     l.loadScript("js/classes/view/PlayByPlayView.js");
+    l.loadScript("js/classes/view/LoginView.js");
     l.loadScript("js/classes/view/AdminView.js");
+    l.loadScript("js/classes/view/EventListView.js");
     // ViewDisplay
+    l.loadScript("js/classes/viewdisplay/LoadingFeedViewDisplay.js");
     l.loadScript("js/classes/viewdisplay/PlayByPlayDisplay.js");
     l.loadScript("js/classes/viewdisplay/ScoreboardDisplay.js");
     l.loadScript("js/classes/viewdisplay/TeamStatsDisplay.js");
+    l.loadScript("js/classes/viewdisplay/LoginViewDisplay.js");
     l.loadScript("js/classes/viewdisplay/AdminViewDisplay.js");
+    l.loadScript("js/classes/viewdisplay/EventListViewDisplay.js");
     // Synchronizr
     l.loadScript("js/classes/synchronizr/1-ReliableChannel.js");
     l.loadScript("js/classes/synchronizr/BluetoothSerial.js");

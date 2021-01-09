@@ -46,6 +46,7 @@ class ScoreDisplayHeader extends UIPanel{
     t.home.image.setSrc(m.team.getImagePath());
     t.guest.image.setSrc(m.opp.getImagePath());
     t.updateNameText();
+    t.clock.setLitColorOverride(m.clock.running ? "#0F2" : null);
     t.clock.setValue(m.clock.period * 10000 + gTime.minutes * 100 + gTime.seconds);
     t.homeScore.setValue(m.team.getStat("points"));
     t.guestScore.setValue(m.opp.getStat("points"));

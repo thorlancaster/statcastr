@@ -101,4 +101,20 @@ if ('serviceWorker' in navigator) {
     }).catch(function(err) {
         console.warn('Error while registering service worker', err);
     });
+    navigator.serviceWorker.addEventListener('message', (event) => {
+      if (!event.data) {
+        return;
+      }
+      switch (event.data) {
+        case 'reload-window':
+          new Toast("Application updated, reloading...");
+          setTimeout(function(){
+            window.location.reload();
+          }, 1000);
+          break;
+        default:
+          // NOOP
+          break;
+      }
+    });
 }

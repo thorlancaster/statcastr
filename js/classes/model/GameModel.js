@@ -7,6 +7,12 @@ class GameModel {
 		this.gender = null;
 		this.location = null;
 		this.desc = null;
+		this.type = null;
+	}
+
+	clear(){
+		this.pbp.clear();
+		this.reloadFromPBP();
 	}
 
 	/**
@@ -59,7 +65,9 @@ class GameModel {
 		var hTown = '', hMascot = '', hAbbr = '', hImg = '', gTown = '', gMascot = '', gAbbr = '', gImg = '', hPlyrs = [], gPlyrs = [];
 		t.location = ''; t.desc = ''; t.startTime = ''; t.gender = '';
 		var ptr = [0];
-		t.type = Synchronizr.byteArrToStr(arrs[0]);
+		// t.type = Synchronizr.byteArrToStr(arrs[0]);
+		// Type is no longer inferred from the stream. It is set directly by the subclass and not changed.
+		// If the stream's type changes, the entire model must be reloaded. Classes are not compatible.
 		try {
 			hTown = Synchronizr.byteArrToStr(Synchronizr.parseField(arrs[1], ptr));
 			hMascot = Synchronizr.byteArrToStr(Synchronizr.parseField(arrs[1], ptr));
@@ -298,6 +306,9 @@ class PlayByPlay {
 	}
 	removePlay(x) {
 		throw "Abstract Method";
+	}
+	clear(){
+		this.plays.length = 0;
 	}
 	/**
 	 * Get plays from this list. If args is null, returns the n most recent plays, sorted by recency (most recent = index 0)

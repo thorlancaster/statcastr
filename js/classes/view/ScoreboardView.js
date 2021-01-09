@@ -49,6 +49,12 @@ class ScoreboardView extends View{
       }
     }
   }
+  resize(){
+    super.resize();
+    var w = window.innerWidth;
+    this.viewDisp.setStyle("maxHeight", w * 0.65 + "px");
+    this.viewDisp.setStyle("fontSize", w * 0.014 + "px");
+  }
   defaultStyle(){
     this.applyStyle(Constants.defaultStyle);
     this.update();

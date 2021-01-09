@@ -19,6 +19,13 @@ class TextField extends UIPanel{
       this.element.innerHTML = html; return this;}
   }
 
+  class LoadingField extends TextField{
+    constructor(){
+      super("<div class='lds-ring'><div></div><div></div><div></div><div></div></div>", true);
+      this.setStyle("textAlign",  "center");
+    }
+  }
+
   class EditTextField extends UIPanel{
     constructor(txt, sz){
       super();

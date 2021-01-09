@@ -96,3 +96,17 @@ class ConfirmationDialog extends Dialog{
         btn.addClickListener(fn);
     }
 }
+
+class OkayDialog extends Dialog{
+    constructor(name, text){
+        super(name);
+        var t = this;
+        var btn = new ButtonField("OK").setStyle("fontSize", "1.3em").setStyle("marginTop", "1em");
+        var txt = new TextField(text, true);
+        t.body.appendChild(txt);
+        t.body.appendChild(btn);
+        btn.addClickListener(function(){
+            t.remove();
+        });
+    }
+}

@@ -5,6 +5,7 @@ class NumberField extends UIPanel{
       var t = this;
       t.format = format;
       t.value = 0;
+      t.litColorOverride = null;
       t.litColor = "#FFF";
       t.unlitColor = "#111"
       t.bgColor = "#000";
@@ -15,6 +16,15 @@ class NumberField extends UIPanel{
       s.width = "100%";
       s.height = "100%";
       t.ctx = t.canvas.getContext("2d");
+    }
+
+    /**
+     * Set a color to override the default lit color
+     * If null, the behavior will return to default
+     * @param {CSS.Color} color 
+     */
+    setLitColorOverride(c){
+      this.litColorOverride = c;
     }
   
     setValue(num){
@@ -131,7 +141,7 @@ class NumberField extends UIPanel{
           ctx.fillStyle = t.unlitColor;
           t.drawDigit(ctx, numStartX+x*fullHeight*space, numStartY, fullHeight/2, fullHeight, 8, null);
         }
-        ctx.fillStyle = t.litColor;
+        ctx.fillStyle = t.litColorOverride ? t.litColorOverride : t.litColor;
         t.drawDigit(ctx, numStartX+x*fullHeight*space, numStartY, fullHeight/2, fullHeight, thisNum, null);
       }
     }

@@ -74,8 +74,8 @@ class TouchManager {
                 t._distLx = x;
                 t._distLy = y;
             }
-            if (e.cancelable)
-                e.preventDefault();
+            // if (e.cancelable) // Used to prevent pull-to-refresh. Caused bugs, moved to CSS
+            //     e.preventDefault();
             // console.log(t.touches);
         });
         t.appRoot.addEventListener("touchend", function (e) {

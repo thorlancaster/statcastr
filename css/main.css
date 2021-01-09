@@ -32,6 +32,7 @@ body{
   font-family: "Helvetica", "sans-serif";
   user-select: none;
   touch-action: manipulation;
+  overscroll-behavior: contain;
 }
 
 .scPlayerTeam, .scPlayerOpp{
@@ -132,7 +133,8 @@ input.invalid{
 
 /* A standard view display, with variable sizing and margins */
 .viewDisplay{
-  margin: 2em auto;
+  --margin: 2.2em;
+  margin: var(--margin) auto;
   background: var(--gradient-bg);
   border: 1px solid black;
   width: var(--view-display-width);
@@ -140,6 +142,7 @@ input.invalid{
 
 /* A view display that takes up the entire screen. Ex. Scoreboards */
 .viewDisplayFull{
+  --margin: 0;
   width: 100%;
   height: 100%;
 }

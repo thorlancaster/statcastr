@@ -16,6 +16,7 @@ class ScoreboardDisplay extends UIPanel{
     t.leftPFP.setStyle("width", "20%");
     t.mainScore.setStyle("width", "60%");
     t.rightPFP.setStyle("width", "20%");
+    t.setStyle("borderBottom", "0.6em solid var(--border-color)");
     t.appendChild(t.leftPFP);
     t.appendChild(t.mainScore);
     t.appendChild(t.rightPFP);

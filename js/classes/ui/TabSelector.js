@@ -3,6 +3,7 @@ class TabSelector extends UIPanel {
     constructor() {
         super();
         var t = this;
+        t._autosel = true;
         t.addClass("tabSelector");
         t.element.style.setProperty("--ts-height", "1.5em");
         t.setElasticity(0)
@@ -15,6 +16,15 @@ class TabSelector extends UIPanel {
         t.selected = "";
         t.mobile = new TabSelectorMobile(this);
         t.appendChild(t.mobile);
+        t.setMobileMode(false);
+    }
+
+    /**
+     * Set whether clicking the tab automatically selects it.
+     * Defaults to true
+     */
+    setAutoSelect(x){
+        this._autosel = x;
     }
 
     addIcon(img) {
@@ -68,10 +78,9 @@ class TabSelector extends UIPanel {
         var t = this;
         var i = t.getItem(name);
         if (t.selected != name) {
-            if (i.selectable) {
+            if (i.selectable && t._autosel) {
                 t.selected = name;
                 t.setHighlighted(name);
-                t.mobile.setLabel(i.getHtml() + " &#9660;");
             }
             if(!noUpdate)
                 t.notifySelect(name);
@@ -89,6 +98,7 @@ class TabSelector extends UIPanel {
             var i = this.items[x];
             if (i.element.dataset.name == name) {
                 i.setSelected(true);
+                this.mobile.setLabel(i.getHtml() + " &#9660;");
             } else {
                 i.setSelected(false);
             }

@@ -1,48 +1,49 @@
 
-class BasketballTeam extends Team{
-    constructor(info){
-      super(info);
-      this.PLAYER_CLASS = BasketballPlayer;
-    }
-    doPlayForTime(p){
-      var t = this;
-      // debugger;
-      var dTime = t.lastPlayTime.ms - p.millis;
-      if(dTime > 0){
-        for(var x in t.players){
-          var pl = t.players[x];
-          if(pl.onCourt)
-            pl.playMs += dTime; // Playing time
-          pl.lastMs = p.millis; // Time when playing time was last updated
-          // if(pl.id == '1'){
-          //   console.log(pl.playMs)
-          // }
-        }
+class BasketballTeam extends Team {
+  constructor(info) {
+    super(info);
+    this.PLAYER_CLASS = BasketballPlayer;
+  }
+  doPlayForTime(p) {
+    var t = this;
+    // debugger;
+    var dTime = t.lastPlayTime.ms - p.millis;
+    if (dTime > 0) {
+      for (var x in t.players) {
+        var pl = t.players[x];
+        if (pl.onCourt)
+          pl.playMs += dTime; // Playing time
+        pl.lastMs = p.millis; // Time when playing time was last updated
+        // if(pl.id == '1'){
+        //   console.log(pl.playMs)
+        // }
       }
-      t.lastPlayTime.ms = p.millis;
-      t.lastPlayTime.pd = p.period;
     }
-  
-    /**
-     * Apply a PBP play to this team's status
-     * @param {*} p Play to apply
-     * @param {*} otherTeam True if play is for other team
-     * @param {*} otherFilter True if play does not match the filter.
-     * In this case it would only be used for SUB_IN and SUB_OUT
-     */
-    doPlay(p, otherTeam, otherFilter){
-      var t = this;
-      if(!otherFilter){
+    t.lastPlayTime.ms = p.millis;
+    t.lastPlayTime.pd = p.period;
+  }
+
+  /**
+   * Apply a PBP play to this team's status
+   * @param {*} p Play to apply
+   * @param {*} otherTeam True if play is for other team
+   * @param {*} otherFilter True if play does not match the filter.
+   * In this case it would only be used for SUB_IN and SUB_OUT
+   */
+  doPlay(p, otherTeam, otherFilter) {
+    var t = this;
+    try {
+      if (!otherFilter) {
         t.doPlayForTime(p);
       }
 
-      if(!otherTeam){
+      if (!otherTeam) {
         var pl = t.players[p.pid];
         var pl2 = t.players[p.pid2];
         assert(pl != null, "Player for doPlay DNE");
         const T = BasketballPlayType;
-        if(!otherFilter){
-          switch(p.type){
+        if (!otherFilter) {
+          switch (p.type) {
             case T.FOUL_P: pl.pFouls++; break;
             case T.FOUL_T: pl.tFouls++; break;
             case T.FT_MADE: pl.ftMade++; break;
@@ -66,23 +67,26 @@ class BasketballTeam extends Team{
 
           }
         } else {
-          switch(p.type){
+          switch (p.type) {
             case T.SUB_IN: pl.onCourt = true; break;
             case T.SUB_OUT: pl.onCourt = false; break;
           }
         }
       }
-    }
-    copyRoster(srcTeam){
-      this.players.length = 0;
-      for(var x in srcTeam.players){
-        var p = srcTeam.players[x];
-        this.addPlayer(new BasketballPlayer(p.id, p.name));
-      }
+    } catch (e) {
+      console.error("CRITICAL: Failed to parse play", e);
     }
   }
-  
-  
+  copyRoster(srcTeam) {
+    this.players.length = 0;
+    for (var x in srcTeam.players) {
+      var p = srcTeam.players[x];
+      this.addPlayer(new BasketballPlayer(p.id, p.name));
+    }
+  }
+}
+
+
   // class TestBasketballTeam extends BasketballTeam{
   //   constructor(info){
   //     super(info);
@@ -102,4 +106,3 @@ class BasketballTeam extends Team{
   //     t.addPlayer(p6);
   //   }
   // }
-  

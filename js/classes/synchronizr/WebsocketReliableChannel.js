@@ -6,7 +6,7 @@ class WebsocketReliableChannel extends ReliableChannel {
         t.TIMEOUT = 20000; // How often to ping server or consider conn dropped
         t.STA_INTERVAL = 500; // How often to check connection state
         t.ws = null;
-        t.queue = [];
+        // t.queue = [];
     }
 
     tick(){
@@ -31,25 +31,27 @@ class WebsocketReliableChannel extends ReliableChannel {
         if(rs == 3) rs = 2;
         var ba = ws ? ws.bufferedAmount : 0;
         if(t._rs != rs || t._ba != ba){
+            var rschg = t._rs != rs;
             t._rs = rs;
             t._ba = ba;
-            var desc = ba;
-            if(rs == 2) desc = "Disconnected";
-            if(rs == 0) desc = "Connecting";
-            if(t.staChgCallback)
-                t.staChgCallback(rs, ba, desc);
+            var desc = null;
+            if(rs == 2) desc = "close";
+            if(rs == 0) desc = "open";
+            // if(rs == 1 && rschg) desc = "connect";
+            if(desc && t._callback)
+                t._callback({status: rs, type: desc});
         }
     }
 
-    available() {
-        return this.queue.length;
-    }
+    // available() {
+    //     return this.queue.length;
+    // }
     
-    read() {
-        if (this.available())
-            return this.queue.shift();
-        return null;
-    }
+    // read() {
+    //     if (this.available())
+    //         return this.queue.shift();
+    //     return null;
+    // }
     
     canWrite() {
         if (!this.isConnected()) return 0;
@@ -77,25 +79,31 @@ class WebsocketReliableChannel extends ReliableChannel {
 
     connect() {
         var t = this;
+        if(t.ws && t.ws.readyState <= 1){
+            t.ws.c_dead = true;
+            t.ws.close();
+        }
         t.ws = new WebSocket(t.connTarget + ':' + t.connPort);
         t.ws.rcEverConnected = false;
         t.ws.addEventListener("message", function (e) {
             console.info("[RC] RX " + e.data);
-            t.queue.push(e.data);
-            if (t.rxCallback)
-                t.rxCallback();
+            // t.queue.push(e.data);
+            if(t._callback)
+                t._callback({status: 1, type: "receive", data: e.data});
         });
         t.ws.addEventListener("close", function (e) {
-            if (t.dcCallback)
-                t.dcCallback();
+            if(e.srcElement.c_dead)
+                return;
+            // if(t._callback)
+            //     t._callback({status: 2, type: "close"});
             t.handleWsClose(e);
         });
         // t.ws.addEventListener("error", t.handleWsError.bind(t));
         t.ws.addEventListener("open", function (e) {
             t.everConnected = true;
             t.staTick();
-            if (t.opCallback)
-                t.opCallback(t.connPort);
+            if(t._callback)
+                t._callback({status: 1, type: "connect", COOCENT: "moist"});
         });
         t.connAttemptTime = Date.now();
         if(t.staTimer) clearInterval(t.staTimer);
@@ -104,8 +112,8 @@ class WebsocketReliableChannel extends ReliableChannel {
         if(t.timer) clearInterval(t.timer);
         t.timer = setInterval(t.tick.bind(t), t.TIMEOUT);
 
-        if (t.inCallback)
-            t.inCallback();
+        // if(t._callback)
+        //         t._callback({status: 0, type: "open"});
         
         t.staTick();
     }
@@ -137,8 +145,10 @@ class WebsocketReliableChannel extends ReliableChannel {
     }
 
     disconnect() {
-        if (this.ws)
+        if (this.ws){
+            this.ws.c_dead = true;
             this.ws.close();
+        }
         this.staTick();
     }
 }

@@ -2,18 +2,8 @@ class BasketballGameModel extends GameModel {
 	constructor() {
 		super();
 		var t = this;
+		t.type = "bbgame";
 		t.clock = new BasketballGameClock();
-		// t.team = new TestBasketballTeam(
-		//   { town: "Froid Medicine-Lake", 
-		//     abbr: "FML",
-		//     name: "Redhawks",
-		//     image: "resources/mascots/froidmedicinelake.png"});
-		// t.opp = new TestBasketballTeam(
-		//   { town: "Bozeman",
-		//     abbr: "STC",
-		//     name: "StatCastrs",
-		//     image: "resources/favicon/favicon-256.png"}
-		// );
 		t.team = new BasketballTeam();
 		t.opp = new BasketballTeam();
 		t.pbp = new BasketballPlayByPlay();

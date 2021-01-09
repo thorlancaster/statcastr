@@ -3,6 +3,8 @@ class Main {
     // Like public static void main(String[] args)
     constructor() {
         var t = this;
+        window.BUS = new MessageBus(new Statefull());
+        window.STATE = BUS.getState();
         window.MAIN = this;
         window.Preferences = new MainPreferencesClass("Statcastr");
         window.Credentials = new CredentialsPreferencesClass("Statcastr.credentials");
@@ -14,18 +16,8 @@ class Main {
         t.mobile = (window.innerWidth < t.MOBILE_WIDTH);
         // ToastSetRoot(APP_ROOT);
         var params = new URL(location.href).searchParams;
-        var eventId = params.get("event");
-        var s = new Synchronizr();
-        t.sc = new StatcastrApp(DGE(APP_ROOT), s, eventId);
-        // s.setLocalData(t.sc.getStaticData(), t.sc.getDynamicData(), t.sc.getEventData());
-        // s.setLocalDataClasses(t.sc.getStaticDataClass(), t.sc.getDynamicDataClass(), t.sc.getEventDataClass());
-        s.setUpdateCallback(t.sc.onSynchronizrUpdate.bind(t.sc));
-        s.setVerificationCallback(t.sc.onSynchronizrVerification.bind(t.sc));
-        s.setErrorCallback(t.sc.onSynchronizrError.bind(t.sc));
-        s.setPreConnectionCallback(t.sc.onSynchronizrPreConn.bind(t.sc));
-        s.setStatusChangeCallback(t.sc.onSynchronizrStatusChange.bind(t.sc));
-        s.setHashValidationDoneCallback(t.sc.onSynchronizrHvDone.bind(t.sc));
-
+        var s = new Synchronizr(BUS);
+        
         t.channel = new DelegateReliableChannel({"ws wss": new WebsocketReliableChannel(), "lfi": new LoFiReliableChannel()});
         if(Preferences.useLofi && Credentials.isAdmin()){
             // TODO dynamic channel target switching
@@ -36,9 +28,22 @@ class Main {
             else
                 t.channel.setTarget("wss://" + window.location.hostname, 1234);
         }
+        if(window.location.hostname == "localhost")
+            document.title = "StatCastr@localhost";
         s.setChannel(t.channel);
-        t.channel.connect();
-        console.log("SynchronizrMain: Channel started");
+        
+        t.sc = new StatcastrApp(DGE(APP_ROOT), s);
+        // s.setLocalData(t.sc.getStaticData(), t.sc.getDynamicData(), t.sc.getEventData());
+        // s.setLocalDataClasses(t.sc.getStaticDataClass(), t.sc.getDynamicDataClass(), t.sc.getEventDataClass());
+        // s.setUpdateCallback(t.sc.onSynchronizrUpdate.bind(t.sc));
+        // s.setVerificationCallback(t.sc.onSynchronizrVerification.bind(t.sc));
+        // s.setErrorCallback(t.sc.onSynchronizrError.bind(t.sc));
+        // s.setPreConnectionCallback(t.sc.onSynchronizrPreConn.bind(t.sc));
+        // s.setStatusChangeCallback(t.sc.onSynchronizrStatusChange.bind(t.sc));
+        // s.setHashValidationDoneCallback(t.sc.onSynchronizrHvDone.bind(t.sc));
+
+        // t.channel.connect();
+        // console.log("SynchronizrMain: Channel started");
         window.CHANNEL = t.channel;
         window.SC = t.sc;
         window.SYN = s;
@@ -49,6 +54,14 @@ class Main {
             console.log("Standalone mode, back button disabled");
             t.disableBackButton();
         }
+
+        var eventId = params.get("event");
+        if(eventId){
+            BUS.publish(new MBMessage("req", "event", eventId));
+        } else {
+            BUS.publish(new MBMessage("req", "event", "null"));
+        }
+        BUS.publish(new MBMessage("updreq", "synchronizr", "reconnect"));
     }
 
     disableBackButton() {

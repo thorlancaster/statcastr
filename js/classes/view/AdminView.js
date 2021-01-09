@@ -1,8 +1,8 @@
 class AdminView extends View{
-    constructor(model, synchronizrPtr, scoreboardUpdateCb){
+    constructor(model, BUS){
       super(model);
       var t = this;
-      t.viewDisp = new AdminViewDisplay(model, synchronizrPtr, scoreboardUpdateCb);
+      t.viewDisp = new AdminViewDisplay(model, BUS);
       t.header = new ScoreDisplayHeader();
       t.defaultStyle();
     }
